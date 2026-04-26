@@ -29,7 +29,12 @@ def save_results(jobs: list[dict], today: str) -> Path:
     results_dir.mkdir(exist_ok=True)
 
     date_str = today.replace('/', '-')
-    csv_path = results_dir / f'{date_str}.csv'
+
+    # 序號遞增，不覆蓋舊檔
+    seq = 1
+    while (results_dir / f'{date_str}-{seq:02d}.csv').exists():
+        seq += 1
+    csv_path = results_dir / f'{date_str}-{seq:02d}.csv'
 
     fieldnames = ['title', 'company', 'location', 'salary', 'experience',
                   'education', 'keyword', 'date', 'url']
@@ -39,7 +44,6 @@ def save_results(jobs: list[dict], today: str) -> Path:
         writer.writeheader()
         writer.writerows(jobs)
 
-    # 同時更新 latest.json 方便 CI badge / 狀態查詢
     summary = {
         'run_at': datetime.now(TAIPEI_TZ).isoformat(),
         'date': today,
