@@ -28,7 +28,7 @@ notification:
     enabled: true
     # 收件人清單（可多個）
     recipients:
-      - your_email@example.com
+      - owen901031@gmail.com
 
   telegram:
     enabled: false
