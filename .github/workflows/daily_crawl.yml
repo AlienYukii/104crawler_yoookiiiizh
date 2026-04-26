@@ -6,6 +6,10 @@ on:
     - cron: '0 23 * * *'
   workflow_dispatch:   # 允許手動觸發
 
+concurrency:
+  group: crawl
+  cancel-in-progress: true   # 有新的觸發就取消舊的，只跑最新一次
+
 permissions:
   contents: write      # 允許將結果 CSV commit 回 repo
 
