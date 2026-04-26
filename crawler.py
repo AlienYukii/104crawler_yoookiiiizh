@@ -88,14 +88,19 @@ def crawl_all(config: dict) -> list[dict]:
 
                 def _on_resp(response, _raw=raw_list):
                     if API_PATH in response.url:
+                        print(f'    [DEBUG] API hit status={response.status} url={response.url[:80]}')
                         try:
-                            _raw.extend(response.json().get('data', []) or [])
-                        except Exception:
-                            pass
+                            data = response.json()
+                            items = data.get('data', []) or []
+                            print(f'    [DEBUG] API returned {len(items)} items')
+                            _raw.extend(items)
+                        except Exception as ex:
+                            print(f'    [DEBUG] JSON parse error: {ex}')
 
                 page.on('response', _on_resp)
                 try:
                     page.goto(url, wait_until='networkidle', timeout=25000)
+                    print(f'    [DEBUG] page title: {page.title()[:60]!r}')
                     time.sleep(1)
                 except Exception as e:
                     print(f'  [!] 頁面載入失敗 keyword={keyword} page={pg}: {e}')
@@ -103,6 +108,7 @@ def crawl_all(config: dict) -> list[dict]:
                     page.remove_listener('response', _on_resp)
 
                 if not raw_list:
+                    print(f'    [DEBUG] no API response captured, stopping at page {pg}')
                     break
 
                 page_had_today = False
