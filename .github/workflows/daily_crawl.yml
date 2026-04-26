@@ -41,7 +41,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
           git add results/
           git diff --staged --quiet || git commit -m "📊 $(TZ=Asia/Taipei date +%Y-%m-%d) 職缺結果"
-          git push
+          for i in 1 2 3; do
+            git push && break
+            echo "Push 失敗，rebase 後重試 ($i/3)..."
+            git pull --rebase origin main
+          done
