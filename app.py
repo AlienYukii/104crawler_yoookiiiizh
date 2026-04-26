@@ -18,6 +18,15 @@ from notifier import notify
 
 TAIPEI_TZ = timezone(timedelta(hours=8))
 
+_AREA_PRIORITY = ['桃園市', '新竹市', '新竹縣', '台北市', '新北市']
+
+def _location_rank(job: dict) -> int:
+    loc = job.get('location', '')
+    for i, city in enumerate(_AREA_PRIORITY):
+        if city in loc:
+            return i
+    return len(_AREA_PRIORITY)
+
 
 def load_config(path: str = 'config.yaml') -> dict:
     with open(path, encoding='utf-8') as f:
@@ -67,6 +76,7 @@ def main() -> None:
     print(f'===== 104 職缺爬蟲 {today} =====')
 
     jobs = crawl_all(config)
+    jobs.sort(key=_location_rank)
 
     save_results(jobs, today)
 
