@@ -21,7 +21,7 @@ search:
   max_pages: 3
 
   # true = 只顯示今日更新職缺；false = 顯示全部搜尋結果
-  today_only: true
+  today_only: false
 
 notification:
   email:
