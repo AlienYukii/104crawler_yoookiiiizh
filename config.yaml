@@ -1,0 +1,36 @@
+# ============================================================
+#  104 職缺爬蟲設定檔
+#  修改後重新執行 / 推上 GitHub 即生效
+# ============================================================
+
+search:
+  keywords:
+    - SDET
+    - QA
+    - 軟體測試
+    - 軟體測試工程師
+
+  areas:
+    - 台北市
+    - 新北市
+    - 桃園市
+    - 新竹市
+    - 新竹縣
+
+  # 每個關鍵字最多抓幾頁（每頁約 40 筆）
+  max_pages: 3
+
+  # true = 只顯示今日更新職缺；false = 顯示全部搜尋結果
+  today_only: true
+
+notification:
+  email:
+    enabled: true
+    # 收件人清單（可多個）
+    recipients:
+      - your_email@example.com
+
+  telegram:
+    enabled: false
+    # Bot Token 與 Chat ID 請設定在 .env 或 GitHub Secrets
+    # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID

@@ -1,0 +1,45 @@
+name: 每日 104 職缺爬蟲
+
+on:
+  schedule:
+    # 每天 07:00 台灣時間 (= 23:00 UTC 前一天)
+    - cron: '0 23 * * *'
+  workflow_dispatch:   # 允許手動觸發
+
+permissions:
+  contents: write      # 允許將結果 CSV commit 回 repo
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run crawler
+        env:
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python app.py
+
+      - name: Commit & push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add results/
+          git diff --staged --quiet || \
+            git commit -m "📊 $(TZ=Asia/Taipei date +%Y-%m-%d) 職缺結果" && \
+            git push
