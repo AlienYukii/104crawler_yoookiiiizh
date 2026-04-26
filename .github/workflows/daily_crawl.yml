@@ -2,16 +2,15 @@ name: 每日 104 職缺爬蟲
 
 on:
   schedule:
-    # 每天 07:00 台灣時間 (= 23:00 UTC 前一天)
-    - cron: '0 23 * * *'
-  workflow_dispatch:   # 允許手動觸發
+    - cron: '0 23 * * *'   # 每天 07:00 台灣時間
+  workflow_dispatch:
 
 concurrency:
   group: crawl
-  cancel-in-progress: true   # 有新的觸發就取消舊的，只跑最新一次
+  cancel-in-progress: true
 
 permissions:
-  contents: write      # 允許將結果 CSV commit 回 repo
+  contents: read
 
 jobs:
   crawl:
@@ -39,12 +38,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python app.py
 
-      - name: Commit & push results
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin
-          git rebase origin/main
-          git add results/
-          git diff --staged --quiet || git commit -m "📊 $(TZ=Asia/Taipei date +%Y-%m-%d) 職缺結果"
-          git push
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobs-${{ github.run_id }}
+          path: results/
+          retention-days: 90
