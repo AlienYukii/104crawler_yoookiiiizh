@@ -1,5 +1,6 @@
 import time
-import requests
+import urllib.parse
+from curl_cffi import requests as cf_requests
 from datetime import datetime, timezone, timedelta
 
 AREA_CODES = {
@@ -10,85 +11,92 @@ AREA_CODES = {
     '新竹縣': '6001006000',
 }
 
-SEARCH_URL = 'https://www.104.com.tw/jobs/search/list'
-
-HEADERS = {
-    'User-Agent': (
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/120.0.0.0 Safari/537.36'
-    ),
-    'Referer': 'https://www.104.com.tw/jobs/search/',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8',
-}
-
-TAIPEI_TZ = timezone(timedelta(hours=8))
+SEARCH_PAGE = 'https://www.104.com.tw/jobs/search/'
+API_URL     = 'https://www.104.com.tw/jobs/search/api/jobs'
+TAIPEI_TZ   = timezone(timedelta(hours=8))
 
 
 def today_taipei() -> str:
-    return datetime.now(TAIPEI_TZ).strftime('%Y/%m/%d')
+    # 格式與 104 API 回傳的 appearDate (YYYYMMDD) 一致
+    return datetime.now(TAIPEI_TZ).strftime('%Y%m%d')
 
 
 def _build_area_param(area_names: list[str]) -> str:
     return ','.join(AREA_CODES[a] for a in area_names if a in AREA_CODES)
 
 
-def _fetch_page(keyword: str, area_param: str, page: int) -> list[dict]:
-    params = {
-        'ro': 0,
-        'kwop': 7,
-        'keyword': keyword,
-        'expansionType': 'area,spec,com,job,wf,wktm',
-        'area': area_param,
-        'order': 15,   # 最新日期排序
-        'asc': 0,
-        'page': page,
-        'mode': 's',
-        'jobsource': '2018indexpoc',
+def _make_session() -> cf_requests.Session:
+    """模擬真實 Chrome 指紋，先訪問首頁取得 Cloudflare Cookie。"""
+    session = cf_requests.Session(impersonate='chrome124')
+    try:
+        session.get(SEARCH_PAGE, timeout=15)
+    except Exception:
+        pass
+    time.sleep(1)
+    return session
+
+
+def _fetch_page(session: cf_requests.Session, keyword: str, area_param: str, page: int) -> list[dict]:
+    qs = urllib.parse.urlencode({
+        'area':     area_param,
+        'asc':      0,
+        'keyword':  keyword,
+        'mode':     's',
+        'order':    15,
+        'page':     page,
+        'pagesize': 20,
+    }, encoding='utf-8')
+    url = f'{API_URL}?{qs}'
+    kw_qs = urllib.parse.urlencode({'keyword': keyword}, encoding='utf-8')
+    headers = {
+        'Referer': f'https://www.104.com.tw/jobs/search/?{kw_qs}',
+        'Accept':  'application/json, text/plain, */*',
     }
     try:
-        resp = requests.get(SEARCH_URL, headers=HEADERS, params=params, timeout=15)
+        resp = session.get(url, headers=headers, timeout=15)
         resp.raise_for_status()
-        return resp.json().get('data', {}).get('list', [])
-    except requests.RequestException as e:
+        if 'application/json' not in resp.headers.get('content-type', ''):
+            print(f'  [!] 非 JSON 回應 keyword={keyword} page={page}')
+            return []
+        return resp.json().get('data', []) or []
+    except Exception as e:
         print(f'  [!] 請求失敗 keyword={keyword} page={page}: {e}')
         return []
 
 
 def _parse_job(raw: dict, keyword: str) -> dict:
-    job_no = raw.get('jobNo', '')
     return {
-        'id': job_no,
-        'title': raw.get('jobName', ''),
-        'company': raw.get('custName', ''),
-        'location': raw.get('jobAddrNoDesc', ''),
-        'salary': raw.get('salaryDesc', '面議'),
+        'id':         raw.get('jobNo', ''),
+        'title':      raw.get('jobName', ''),
+        'company':    raw.get('custName', ''),
+        'location':   raw.get('jobAddrNoDesc', ''),
+        'salary':     raw.get('salaryDesc', '面議'),
         'experience': raw.get('periodDesc', ''),
-        'education': raw.get('eduDesc', ''),
-        'date': raw.get('appearDate', ''),
-        'url': f'https://www.104.com.tw/job/{job_no}',
-        'keyword': keyword,
+        'education':  raw.get('eduDesc', ''),
+        'date':       raw.get('appearDate', ''),
+        'url':        raw.get('link', {}).get('job', ''),
+        'keyword':    keyword,
     }
 
 
 def crawl_all(config: dict) -> list[dict]:
-    search = config['search']
-    keywords: list[str] = search['keywords']
+    search     = config['search']
+    keywords   = search['keywords']
     area_param = _build_area_param(search.get('areas', []))
-    max_pages: int = search.get('max_pages', 3)
-    today_only: bool = search.get('today_only', True)
-    today = today_taipei()
+    max_pages  = search.get('max_pages', 3)
+    today_only = search.get('today_only', True)
+    today      = today_taipei()
 
+    session   = _make_session()
     seen_ids: set[str] = set()
-    all_jobs: list[dict] = []
+    all_jobs:  list[dict] = []
 
     for keyword in keywords:
         print(f'[*] 搜尋: {keyword}')
         kw_count = 0
 
-        for page in range(1, max_pages + 1):
-            raw_list = _fetch_page(keyword, area_param, page)
+        for pg in range(1, max_pages + 1):
+            raw_list = _fetch_page(session, keyword, area_param, pg)
             if not raw_list:
                 break
 
@@ -104,7 +112,6 @@ def crawl_all(config: dict) -> list[dict]:
                     all_jobs.append(job)
                     kw_count += 1
 
-            # 若本頁完全沒有今日職缺，後面幾頁更不會有
             if today_only and not page_had_today:
                 break
 
