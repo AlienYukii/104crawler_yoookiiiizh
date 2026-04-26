@@ -1,7 +1,7 @@
 import time
 import urllib.parse
-from curl_cffi import requests as cf_requests
 from datetime import datetime, timezone, timedelta
+from playwright.sync_api import sync_playwright
 
 AREA_CODES = {
     '台北市': '6001001000',
@@ -11,57 +11,16 @@ AREA_CODES = {
     '新竹縣': '6001006000',
 }
 
-SEARCH_PAGE = 'https://www.104.com.tw/jobs/search/'
-API_URL     = 'https://www.104.com.tw/jobs/search/api/jobs'
+API_PATH    = '/jobs/search/api/jobs'
 TAIPEI_TZ   = timezone(timedelta(hours=8))
 
 
 def today_taipei() -> str:
-    # 格式與 104 API 回傳的 appearDate (YYYYMMDD) 一致
     return datetime.now(TAIPEI_TZ).strftime('%Y%m%d')
 
 
 def _build_area_param(area_names: list[str]) -> str:
     return ','.join(AREA_CODES[a] for a in area_names if a in AREA_CODES)
-
-
-def _make_session() -> cf_requests.Session:
-    """模擬真實 Chrome 指紋，先訪問首頁取得 Cloudflare Cookie。"""
-    session = cf_requests.Session(impersonate='chrome124')
-    try:
-        session.get(SEARCH_PAGE, timeout=15)
-    except Exception:
-        pass
-    time.sleep(1)
-    return session
-
-
-def _fetch_page(session: cf_requests.Session, keyword: str, area_param: str, page: int) -> list[dict]:
-    qs = urllib.parse.urlencode({
-        'area':     area_param,
-        'asc':      0,
-        'keyword':  keyword,
-        'mode':     's',
-        'order':    15,
-        'page':     page,
-        'pagesize': 20,
-    }, encoding='utf-8')
-    url = f'{API_URL}?{qs}'
-    kw_qs = urllib.parse.urlencode({'keyword': keyword}, encoding='utf-8')
-    headers = {
-        'Referer': f'https://www.104.com.tw/jobs/search/?{kw_qs}',
-        'Accept':  'application/json, text/plain, */*',
-    }
-    try:
-        resp = session.get(url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        if 'application/json' not in resp.headers.get('content-type', ''):
-            print(f'  [!] 非 JSON 回應 keyword={keyword} page={page}')
-            return []
-        return resp.json().get('data', []) or []
-    except Exception as e:
-        print(f'  [!] 請求失敗 keyword={keyword} page={page}: {e}')
-        return []
 
 
 def _parse_job(raw: dict, keyword: str) -> dict:
@@ -87,37 +46,85 @@ def crawl_all(config: dict) -> list[dict]:
     today_only = search.get('today_only', True)
     today      = today_taipei()
 
-    session   = _make_session()
     seen_ids: set[str] = set()
     all_jobs:  list[dict] = []
 
-    for keyword in keywords:
-        print(f'[*] 搜尋: {keyword}')
-        kw_count = 0
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-dev-shm-usage'],
+        )
+        context = browser.new_context(
+            locale='zh-TW',
+            user_agent=(
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/124.0.0.0 Safari/537.36'
+            ),
+        )
+        page = context.new_page()
 
-        for pg in range(1, max_pages + 1):
-            raw_list = _fetch_page(session, keyword, area_param, pg)
-            if not raw_list:
-                break
+        print('[*] 初始化瀏覽器，訪問 104 首頁...')
+        try:
+            page.goto('https://www.104.com.tw/jobs/search/',
+                      wait_until='networkidle', timeout=30000)
+        except Exception as e:
+            print(f'  [!] 首頁載入超時（繼續執行）: {e}')
+        time.sleep(2)
 
-            page_had_today = False
-            for raw in raw_list:
-                appear_date = raw.get('appearDate', '')
-                if today_only and appear_date != today:
-                    continue
-                page_had_today = True
-                job = _parse_job(raw, keyword)
-                if job['id'] not in seen_ids:
-                    seen_ids.add(job['id'])
-                    all_jobs.append(job)
-                    kw_count += 1
+        for keyword in keywords:
+            print(f'[*] 搜尋: {keyword}')
+            kw_count = 0
+            kw_enc = urllib.parse.quote(keyword, safe='')
 
-            if today_only and not page_had_today:
-                break
+            for pg in range(1, max_pages + 1):
+                url = (
+                    f'https://www.104.com.tw/jobs/search/?'
+                    f'keyword={kw_enc}&area={area_param}'
+                    f'&order=15&asc=0&page={pg}&mode=s'
+                )
 
-            time.sleep(1)
+                raw_list: list[dict] = []
 
-        print(f'    → 今日新增 {kw_count} 筆 (累計去重 {len(all_jobs)} 筆)')
-        time.sleep(0.5)
+                def _on_resp(response, _raw=raw_list):
+                    if API_PATH in response.url:
+                        try:
+                            _raw.extend(response.json().get('data', []) or [])
+                        except Exception:
+                            pass
+
+                page.on('response', _on_resp)
+                try:
+                    page.goto(url, wait_until='networkidle', timeout=25000)
+                    time.sleep(1)
+                except Exception as e:
+                    print(f'  [!] 頁面載入失敗 keyword={keyword} page={pg}: {e}')
+                finally:
+                    page.remove_listener('response', _on_resp)
+
+                if not raw_list:
+                    break
+
+                page_had_today = False
+                for raw in raw_list:
+                    appear_date = raw.get('appearDate', '')
+                    if today_only and appear_date != today:
+                        continue
+                    page_had_today = True
+                    job = _parse_job(raw, keyword)
+                    if job['id'] not in seen_ids:
+                        seen_ids.add(job['id'])
+                        all_jobs.append(job)
+                        kw_count += 1
+
+                if today_only and not page_had_today:
+                    break
+
+                time.sleep(1)
+
+            print(f'    → 今日新增 {kw_count} 筆 (累計去重 {len(all_jobs)} 筆)')
+            time.sleep(0.5)
+
+        browser.close()
 
     return all_jobs
