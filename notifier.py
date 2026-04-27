@@ -12,7 +12,7 @@ MAX_TG_CHARS = 4000   # Telegram 單則上限 4096，留緩衝
 
 # ── Email ──────────────────────────────────────────────────────────────────
 
-def _build_html(jobs: list[dict], today: str) -> str:
+def _build_html(jobs: list[dict], today: str, report_url: str = '') -> str:
     if not jobs:
         body_content = '<p style="color:#666;">今日無符合條件的新職缺。</p>'
     else:
@@ -46,17 +46,25 @@ def _build_html(jobs: list[dict], today: str) -> str:
           </tbody>
         </table>'''
 
+    report_btn = (
+        f'<p style="margin-top:20px;">'
+        f'<a href="{report_url}" style="display:inline-block;padding:10px 20px;'
+        f'background:#1a73e8;color:#fff;text-decoration:none;border-radius:6px;'
+        f'font-weight:bold;">🔍 開啟互動式報告</a></p>'
+    ) if report_url else ''
+
     return f'''<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:20px;">
   <h2 style="color:#1a73e8;">📋 104 每日職缺通知 — {today}</h2>
+  {report_btn}
   {body_content}
   <hr style="margin-top:30px;border:none;border-top:1px solid #eee;">
   <p style="color:#aaa;font-size:12px;">由 104-job-crawler 自動產生</p>
 </body></html>'''
 
 
-def send_email(jobs: list[dict], config: dict, today: str) -> None:
+def send_email(jobs: list[dict], config: dict, today: str, report_url: str = '') -> None:
     email_cfg = config['notification']['email']
     if not email_cfg.get('enabled', False):
         return
@@ -70,7 +78,7 @@ def send_email(jobs: list[dict], config: dict, today: str) -> None:
         return
 
     subject = f'【104職缺】{today} 共 {len(jobs)} 筆新職缺'
-    html_body = _build_html(jobs, today)
+    html_body = _build_html(jobs, today, report_url)
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
@@ -143,7 +151,7 @@ def send_telegram(jobs: list[dict], config: dict, today: str) -> None:
 
 # ── 統一入口 ────────────────────────────────────────────────────────────────
 
-def notify(jobs: list[dict], config: dict) -> None:
+def notify(jobs: list[dict], config: dict, report_url: str = '') -> None:
     today = datetime.now(TAIPEI_TZ).strftime('%Y/%m/%d')
-    send_email(jobs, config, today)
+    send_email(jobs, config, today, report_url)
     send_telegram(jobs, config, today)

@@ -15,8 +15,10 @@ from dotenv import load_dotenv
 
 from crawler import crawl_all
 from notifier import notify
+from reporter import save_html
 
-TAIPEI_TZ = timezone(timedelta(hours=8))
+TAIPEI_TZ   = timezone(timedelta(hours=8))
+REPORT_URL  = 'https://alienyukii.github.io/104crawler_yoookiiiizh/'
 
 _AREA_PRIORITY = ['桃園市', '新竹市', '新竹縣', '台北市', '新北市']
 
@@ -78,14 +80,17 @@ def main() -> None:
     jobs = crawl_all(config)
     jobs.sort(key=_location_rank)
 
+    results_dir = Path('results')
+    config_yaml = Path('config.yaml').read_text(encoding='utf-8')
     save_results(jobs, today)
+    save_html(jobs, today, results_dir, config_yaml=config_yaml)
 
     if jobs:
         print(f'\n[*] 今日共找到 {len(jobs)} 筆職缺，開始發送通知...')
     else:
         print('\n[*] 今日無新職缺，仍發送通知（空白報告）。')
 
-    notify(jobs, config)
+    notify(jobs, config, report_url=REPORT_URL)
     print('===== 完成 =====')
 
 

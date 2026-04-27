@@ -1,0 +1,412 @@
+import json
+import re
+from pathlib import Path
+
+_CITIES = ['桃園市', '新竹市', '新竹縣', '台北市', '新北市']
+
+_CITY_COLOR = {
+    '桃園市': '#e67e22',
+    '新竹市': '#27ae60',
+    '新竹縣': '#2ecc71',
+    '台北市': '#2980b9',
+    '新北市': '#8e44ad',
+    '其他':   '#7f8c8d',
+}
+
+_SALARY_ORDER = ['面議', '時薪', '3萬以下', '3~4萬', '4~5萬', '5~6萬', '6~8萬', '8萬以上']
+
+
+def _city(loc: str) -> str:
+    for c in _CITIES:
+        if c in loc:
+            return c
+    return '其他'
+
+
+def _salary_bucket(desc: str) -> str:
+    if not desc or '面議' in desc:
+        return '面議'
+    nums = [int(n.replace(',', '')) for n in re.findall(r'[\d,]+', desc)]
+    if not nums:
+        return '面議'
+    avg = sum(nums) / len(nums)
+    if '年薪' in desc:
+        avg /= 12
+    elif '時薪' in desc:
+        return '時薪'
+    if avg < 30000: return '3萬以下'
+    if avg < 40000: return '3~4萬'
+    if avg < 50000: return '4~5萬'
+    if avg < 60000: return '5~6萬'
+    if avg < 80000: return '6~8萬'
+    return '8萬以上'
+
+
+def save_html(jobs: list[dict], today: str, results_dir: Path,
+              config_yaml: str = '') -> Path:
+    enriched = [
+        {**j,
+         'city': _city(j.get('location', '')),
+         'salary_bucket': _salary_bucket(j.get('salary', ''))}
+        for j in jobs
+    ]
+    jobs_j  = json.dumps(enriched,      ensure_ascii=False).replace('</', '<\\/')
+    color_j = json.dumps(_CITY_COLOR,   ensure_ascii=False)
+    sal_j   = json.dumps(_SALARY_ORDER, ensure_ascii=False)
+    cfg_j   = json.dumps(config_yaml,   ensure_ascii=False)
+
+    html = (_HTML
+            .replace('__TODAY__',       today)
+            .replace('__TOTAL__',       str(len(jobs)))
+            .replace('"__JOBS__"',      jobs_j)
+            .replace('"__COLORS__"',    color_j)
+            .replace('"__SALORD__"',    sal_j)
+            .replace('"__CFG_YAML__"',  cfg_j))
+
+    path = results_dir / 'index.html'
+    path.write_text(html, encoding='utf-8')
+    print(f'[*] HTML 報告已產生: {path}（{len(jobs)} 筆）')
+    return path
+
+
+_HTML = """<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>104 職缺 — __TODAY__</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#2c3e50}
+
+.hd{background:linear-gradient(120deg,#1558d6,#1a73e8);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.22)}
+.hd-t{font-size:1.1rem;font-weight:700}
+.hd-m{margin-left:auto;font-size:.8rem;opacity:.82;margin-right:10px}
+.hd-btn{padding:5px 13px;border:1.5px solid rgba(255,255,255,.65);border-radius:8px;background:transparent;color:#fff;cursor:pointer;font-size:.78rem;font-weight:700;transition:all .15s;white-space:nowrap}
+.hd-btn:hover{background:rgba(255,255,255,.18)}
+.hd-btn.pr{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.9)}
+
+.fb{background:#fff;border-bottom:1px solid #e4e4e4;padding:9px 24px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;position:sticky;top:51px;z-index:99;box-shadow:0 2px 5px rgba(0,0,0,.05)}
+.fg{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.fl{font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{padding:3px 9px;border-radius:12px;border:1.5px solid #ddd;background:#fff;font-size:.75rem;cursor:pointer;transition:all .13s;color:#555;user-select:none}
+.chip:hover{border-color:#1a73e8;color:#1a73e8}
+.chip.on{background:#1a73e8;border-color:#1a73e8;color:#fff;font-weight:600}
+.vs{width:1px;height:20px;background:#eee;flex-shrink:0}
+.fsel{padding:3px 8px;border:1.5px solid #ddd;border-radius:12px;font-size:.75rem;background:#fff;color:#555;cursor:pointer;outline:none}
+.fsel:focus{border-color:#1a73e8}
+.sbox{padding:4px 11px;border:1.5px solid #ddd;border-radius:12px;font-size:.75rem;outline:none;min-width:140px}
+.sbox:focus{border-color:#1a73e8}
+
+.wrap{padding:16px 24px}
+.empty{text-align:center;padding:56px;color:#bbb;font-size:.9rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:13px}
+
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:box-shadow .2s,transform .18s;cursor:pointer;display:flex;flex-direction:column;overflow:hidden}
+.card:hover{box-shadow:0 8px 28px rgba(0,0,0,.13);transform:translateY(-3px)}
+.cm{padding:14px 15px 10px;flex:1}
+.ct{font-size:.94rem;font-weight:700;color:#1558d6;text-decoration:none;display:block;margin-bottom:3px;line-height:1.35}
+.ct:hover{text-decoration:underline}
+.cc{font-size:.82rem;color:#555;margin-bottom:8px}
+.bdgs{display:flex;flex-wrap:wrap;gap:4px}
+.bdg{padding:2px 7px;border-radius:9px;font-size:.67rem;font-weight:600}
+.bc{color:#fff}
+.bs{background:#e8f5e9;color:#2e7d32}
+.bk{background:#e8eaf6;color:#283593}
+
+.prev{overflow:hidden;max-height:0;transition:max-height .22s ease,padding .22s,border-top-width .22s;padding:0 15px;background:#f6f8ff;border-top:0px solid #dde3f5}
+.card:hover .prev{max-height:90px;padding:9px 15px;border-top-width:1px}
+.prow{display:flex;flex-wrap:wrap;gap:7px 16px}
+.pi{font-size:.73rem;color:#666}
+.pi b{color:#3c4858;font-weight:600}
+
+.cf{padding:7px 15px;background:#fafafa;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+.fd{font-size:.67rem;color:#ccc}
+.fbl{font-size:.7rem;color:#1558d6;font-weight:700;text-decoration:none;padding:2px 9px;border:1.5px solid #1558d6;border-radius:7px;transition:all .13s}
+.fbl:hover{background:#1558d6;color:#fff}
+
+/* drawer */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200}
+.ov.show{display:block}
+.dr{position:fixed;right:0;top:0;bottom:0;width:360px;max-width:100vw;background:#fff;z-index:201;box-shadow:-4px 0 24px rgba(0,0,0,.16);transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;display:flex;flex-direction:column}
+.dr.show{transform:translateX(0)}
+.dr-hd{padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dr-title{font-weight:700;font-size:.98rem}
+.dr-x{cursor:pointer;font-size:1.1rem;color:#aaa;background:none;border:none;line-height:1;padding:2px 6px}
+.dr-x:hover{color:#333}
+.dr-body{padding:18px 20px;flex:1;overflow-y:auto}
+.dl{font-size:.72rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px}
+.di{width:100%;padding:7px 11px;border:1.5px solid #ddd;border-radius:8px;font-size:.83rem;outline:none;margin-bottom:4px}
+.di:focus{border-color:#1a73e8}
+.dh{font-size:.7rem;color:#bbb;margin-bottom:12px}
+.db{width:100%;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:.83rem;font-weight:700;transition:opacity .15s;margin-bottom:6px}
+.db.pr{background:#1a73e8;color:#fff}
+.db.sc{background:#f0f2f5;color:#444}
+.db:hover{opacity:.85}
+.db:disabled{opacity:.45;cursor:not-allowed}
+.db.loading::after{content:' ⏳'}
+textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75rem;resize:vertical;line-height:1.5}
+.sep{border:none;border-top:1px solid #eee;margin:16px 0}
+.dsec{margin-bottom:14px}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:9px;color:#fff;font-size:.82rem;font-weight:600;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;max-width:280px}
+.toast.show{opacity:1}
+.toast.ok{background:#2e7d32}
+.toast.err{background:#c62828}
+
+@media(max-width:640px){
+  .hd,.fb,.wrap{padding-left:14px;padding-right:14px}
+  .fb{top:47px}
+  .grid{grid-template-columns:1fr}
+  .hd-m{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <span class="hd-t">📋 104 每日職缺</span>
+  <div class="hd-m"><span id="vis">__TOTAL__</span> / __TOTAL__ 筆 &nbsp;·&nbsp; __TODAY__</div>
+  <button class="hd-btn pr" onclick="triggerWorkflow()">▶ 觸發</button>
+  <button class="hd-btn" onclick="openDrawer()">⚙ 設定</button>
+</div>
+
+<div class="fb">
+  <div class="fg"><span class="fl">地區</span><div class="chips" id="ac"></div></div>
+  <div class="vs"></div>
+  <div class="fg"><span class="fl">關鍵字</span><div class="chips" id="kc"></div></div>
+  <div class="vs"></div>
+  <div class="fg"><span class="fl">薪資</span><select class="fsel" id="ss"><option value="">全部</option></select></div>
+  <div class="vs"></div>
+  <input class="sbox" id="sb" placeholder="搜尋職缺、公司…" type="text">
+</div>
+
+<div class="wrap">
+  <div class="empty" id="empty" style="display:none">沒有符合條件的職缺</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- Settings drawer -->
+<div class="ov" id="ov" onclick="closeDrawer()"></div>
+<div class="dr" id="dr">
+  <div class="dr-hd">
+    <span class="dr-title">⚙ 設定 & 操作</span>
+    <button class="dr-x" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="dr-body">
+    <div class="dsec">
+      <span class="dl">GitHub Personal Access Token</span>
+      <input class="di" id="pat" type="password" placeholder="ghp_xxxx... 或 fine-grained token">
+      <p class="dh">需要 <b>repo</b> + <b>workflow</b> 權限，僅存於本機瀏覽器 localStorage</p>
+    </div>
+
+    <button class="db pr" id="trig-btn" onclick="triggerOnly()">▶ 立即觸發爬蟲</button>
+
+    <hr class="sep">
+
+    <div class="dsec">
+      <span class="dl">Config.yaml 編輯</span>
+      <textarea class="di" id="cfg-editor"></textarea>
+      <p class="dh">儲存後可選擇是否同時觸發爬蟲</p>
+    </div>
+    <button class="db pr" onclick="saveAndTrigger()">💾 儲存 + 觸發</button>
+    <button class="db sc" onclick="saveConfigOnly()">💾 僅儲存 Config</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const JOBS   = "__JOBS__";
+const COLORS = "__COLORS__";
+const SORD   = "__SALORD__";
+const CFG_YAML = "__CFG_YAML__";
+
+const REPO = 'AlienYukii/104crawler_yoookiiiizh';
+const WFID = 'daily_crawl.yml';
+
+let sA=new Set(), sK=new Set(), sS='', sQ='';
+
+// ── Filters ─────────────────────────────────────────────────────
+
+function init(){
+  const areas = uniq(JOBS.map(j=>j.city));
+  const kws   = uniq(JOBS.map(j=>j.keyword)).sort();
+  const bkts  = uniq(JOBS.map(j=>j.salary_bucket))
+                  .sort((a,b)=>SORD.indexOf(a)-SORD.indexOf(b));
+  mk('ac', areas, sA);
+  mk('kc', kws,   sK);
+  const sel=document.getElementById('ss');
+  bkts.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o)});
+  sel.onchange=()=>{sS=sel.value; go()};
+  document.getElementById('sb').oninput=e=>{sQ=e.target.value.toLowerCase(); go()};
+  go();
+}
+
+function uniq(a){return[...new Set(a)]}
+
+function mk(id,vals,set){
+  const w=document.getElementById(id);
+  const all=chip('全部',true);
+  all.onclick=()=>{set.clear();go()};
+  w.appendChild(all);
+  vals.forEach(v=>{
+    const c=chip(v,false);
+    c.onclick=()=>{set.has(v)?set.delete(v):set.add(v);go()};
+    w.appendChild(c);
+  });
+}
+
+function chip(txt,on){
+  const c=document.createElement('span');
+  c.className='chip'+(on?' on':'');
+  c.textContent=txt;
+  return c;
+}
+
+function sync(id,set){
+  [...document.getElementById(id).children].forEach(c=>{
+    c.classList.toggle('on', c.textContent==='全部'?set.size===0:set.has(c.textContent));
+  });
+}
+
+function go(){
+  sync('ac',sA); sync('kc',sK);
+  const out=JOBS.filter(j=>{
+    if(sA.size&&!sA.has(j.city))         return false;
+    if(sK.size&&!sK.has(j.keyword))      return false;
+    if(sS&&j.salary_bucket!==sS)         return false;
+    if(sQ&&!(j.title+j.company+j.location).toLowerCase().includes(sQ)) return false;
+    return true;
+  });
+  document.getElementById('vis').textContent=out.length;
+  document.getElementById('empty').style.display=out.length?'none':'block';
+  const g=document.getElementById('grid');
+  g.innerHTML='';
+  out.forEach(j=>g.appendChild(mkCard(j)));
+}
+
+function mkCard(j){
+  const col=COLORS[j.city]||'#7f8c8d';
+  const d=j.date&&j.date.length===8
+    ?j.date.slice(0,4)+'/'+j.date.slice(4,6)+'/'+j.date.slice(6,8)
+    :j.date||'–';
+  const el=document.createElement('div');
+  el.className='card';
+  el.innerHTML=`
+    <div class="cm">
+      <a class="ct" href="${x(j.url)}" target="_blank" onclick="event.stopPropagation()">${x(j.title)}</a>
+      <div class="cc">${x(j.company)}</div>
+      <div class="bdgs">
+        <span class="bdg bc" style="background:${col}">${x(j.city)}</span>
+        <span class="bdg bs">${x(j.salary)}</span>
+        <span class="bdg bk">${x(j.keyword)}</span>
+      </div>
+    </div>
+    <div class="prev">
+      <div class="prow">
+        ${j.location  ?`<div class="pi">📍 <b>${x(j.location)}</b></div>`:''}
+        ${j.experience?`<div class="pi">⏱ <b>${x(j.experience)}</b></div>`:''}
+        ${j.education ?`<div class="pi">🎓 <b>${x(j.education)}</b></div>`:''}
+      </div>
+    </div>
+    <div class="cf">
+      <span class="fd">📅 ${d}</span>
+      <a class="fbl" href="${x(j.url)}" target="_blank" onclick="event.stopPropagation()">查看詳情 →</a>
+    </div>`;
+  el.addEventListener('click',()=>window.open(j.url,'_blank'));
+  return el;
+}
+
+function x(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Drawer ───────────────────────────────────────────────────────
+
+function openDrawer(){
+  const saved=localStorage.getItem('gh_pat')||'';
+  if(saved) document.getElementById('pat').value=saved;
+  document.getElementById('cfg-editor').value=CFG_YAML;
+  document.getElementById('ov').classList.add('show');
+  document.getElementById('dr').classList.add('show');
+}
+
+function closeDrawer(){
+  document.getElementById('ov').classList.remove('show');
+  document.getElementById('dr').classList.remove('show');
+}
+
+function getPAT(){
+  const p=document.getElementById('pat').value.trim();
+  if(p) localStorage.setItem('gh_pat',p);
+  return p;
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+
+function toast(msg,ok=true){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast show '+(ok?'ok':'err');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.className='toast',3500);
+}
+
+// ── GitHub API ───────────────────────────────────────────────────
+
+async function triggerWorkflow(){
+  const pat=getPAT();
+  if(!pat){openDrawer();toast('請先在設定中填入 GitHub Token',false);return;}
+  const btn=document.getElementById('trig-btn');
+  btn.disabled=true; btn.classList.add('loading');
+  try{
+    const r=await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${WFID}/dispatches`,{
+      method:'POST',
+      headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({ref:'main'})
+    });
+    r.status===204?toast('✅ 已觸發！約 5 分鐘後更新頁面'):toast(`❌ 觸發失敗 (${r.status})`,false);
+  }catch(e){toast('❌ 網路錯誤',false);}
+  btn.disabled=false; btn.classList.remove('loading');
+}
+
+async function triggerOnly(){await triggerWorkflow();}
+
+async function doSaveConfig(){
+  const pat=getPAT();
+  if(!pat){toast('請先填入 GitHub Token',false);return false;}
+  const content=document.getElementById('cfg-editor').value;
+  try{
+    const g=await fetch(`https://api.github.com/repos/${REPO}/contents/config.yaml`,{
+      headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github+json'}
+    });
+    if(!g.ok){toast(`❌ 讀取 config 失敗 (${g.status})`,false);return false;}
+    const {sha}=await g.json();
+    const u=await fetch(`https://api.github.com/repos/${REPO}/contents/config.yaml`,{
+      method:'PUT',
+      headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        message:'chore: update config via web UI',
+        content:btoa(unescape(encodeURIComponent(content))),
+        sha,branch:'main'
+      })
+    });
+    if(u.ok){toast('✅ Config 已更新');return true;}
+    else{toast(`❌ 更新失敗 (${u.status})`,false);return false;}
+  }catch(e){toast('❌ 網路錯誤',false);return false;}
+}
+
+async function saveAndTrigger(){
+  const ok=await doSaveConfig();
+  if(ok) await triggerOnly();
+}
+
+async function saveConfigOnly(){await doSaveConfig();}
+
+init();
+</script>
+</body>
+</html>"""
