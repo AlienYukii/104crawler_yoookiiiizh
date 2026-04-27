@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>104 職缺 — 2026/04/27</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#2c3e50}
+
+.hd{background:linear-gradient(120deg,#1558d6,#1a73e8);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.22)}
+.hd-t{font-size:1.1rem;font-weight:700}
+.hd-m{margin-left:auto;font-size:.8rem;opacity:.82;margin-right:10px}
+.hd-btn{padding:5px 13px;border:1.5px solid rgba(255,255,255,.65);border-radius:8px;background:transparent;color:#fff;cursor:pointer;font-size:.78rem;font-weight:700;transition:all .15s;white-space:nowrap}
+.hd-btn:hover{background:rgba(255,255,255,.18)}
+.hd-btn.pr{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.9)}
+
+.fb{background:#fff;border-bottom:1px solid #e4e4e4;padding:9px 24px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;position:sticky;top:51px;z-index:99;box-shadow:0 2px 5px rgba(0,0,0,.05)}
+.fg{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.fl{font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{padding:3px 9px;border-radius:12px;border:1.5px solid #ddd;background:#fff;font-size:.75rem;cursor:pointer;transition:all .13s;color:#555;user-select:none}
+.chip:hover{border-color:#1a73e8;color:#1a73e8}
+.chip.on{background:#1a73e8;border-color:#1a73e8;color:#fff;font-weight:600}
+.vs{width:1px;height:20px;background:#eee;flex-shrink:0}
+.fsel{padding:3px 8px;border:1.5px solid #ddd;border-radius:12px;font-size:.75rem;background:#fff;color:#555;cursor:pointer;outline:none}
+.fsel:focus{border-color:#1a73e8}
+.sbox{padding:4px 11px;border:1.5px solid #ddd;border-radius:12px;font-size:.75rem;outline:none;min-width:140px}
+.sbox:focus{border-color:#1a73e8}
+
+.wrap{padding:16px 24px}
+.empty{text-align:center;padding:56px;color:#bbb;font-size:.9rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:13px}
+
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:box-shadow .2s,transform .18s;cursor:pointer;display:flex;flex-direction:column;overflow:hidden}
+.card:hover{box-shadow:0 8px 28px rgba(0,0,0,.13);transform:translateY(-3px)}
+.cm{padding:14px 15px 10px;flex:1}
+.ct{font-size:.94rem;font-weight:700;color:#1558d6;text-decoration:none;display:block;margin-bottom:3px;line-height:1.35}
+.ct:hover{text-decoration:underline}
+.cc{font-size:.82rem;color:#555;margin-bottom:8px}
+.bdgs{display:flex;flex-wrap:wrap;gap:4px}
+.bdg{padding:2px 7px;border-radius:9px;font-size:.67rem;font-weight:600}
+.bc{color:#fff}
+.bs{background:#e8f5e9;color:#2e7d32}
+.bk{background:#e8eaf6;color:#283593}
+
+.prev{overflow:hidden;max-height:0;transition:max-height .22s ease,padding .22s,border-top-width .22s;padding:0 15px;background:#f6f8ff;border-top:0px solid #dde3f5}
+.card:hover .prev{max-height:90px;padding:9px 15px;border-top-width:1px}
+.prow{display:flex;flex-wrap:wrap;gap:7px 16px}
+.pi{font-size:.73rem;color:#666}
+.pi b{color:#3c4858;font-weight:600}
+
+.cf{padding:7px 15px;background:#fafafa;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+.fd{font-size:.67rem;color:#ccc}
+.fbl{font-size:.7rem;color:#1558d6;font-weight:700;text-decoration:none;padding:2px 9px;border:1.5px solid #1558d6;border-radius:7px;transition:all .13s}
+.fbl:hover{background:#1558d6;color:#fff}
+
+/* drawer */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200}
+.ov.show{display:block}
+.dr{position:fixed;right:0;top:0;bottom:0;width:360px;max-width:100vw;background:#fff;z-index:201;box-shadow:-4px 0 24px rgba(0,0,0,.16);transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;display:flex;flex-direction:column}
+.dr.show{transform:translateX(0)}
+.dr-hd{padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dr-title{font-weight:700;font-size:.98rem}
+.dr-x{cursor:pointer;font-size:1.1rem;color:#aaa;background:none;border:none;line-height:1;padding:2px 6px}
+.dr-x:hover{color:#333}
+.dr-body{padding:18px 20px;flex:1;overflow-y:auto}
+.dl{font-size:.72rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px}
+.di{width:100%;padding:7px 11px;border:1.5px solid #ddd;border-radius:8px;font-size:.83rem;outline:none;margin-bottom:4px}
+.di:focus{border-color:#1a73e8}
+.dh{font-size:.7rem;color:#bbb;margin-bottom:12px}
+.db{width:100%;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:.83rem;font-weight:700;transition:opacity .15s;margin-bottom:6px}
+.db.pr{background:#1a73e8;color:#fff}
+.db.sc{background:#f0f2f5;color:#444}
+.db:hover{opacity:.85}
+.db:disabled{opacity:.45;cursor:not-allowed}
+.db.loading::after{content:' ⏳'}
+textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75rem;resize:vertical;line-height:1.5}
+.sep{border:none;border-top:1px solid #eee;margin:16px 0}
+.dsec{margin-bottom:14px}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:9px;color:#fff;font-size:.82rem;font-weight:600;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;max-width:280px}
+.toast.show{opacity:1}
+.toast.ok{background:#2e7d32}
+.toast.err{background:#c62828}
+
+@media(max-width:640px){
+  .hd,.fb,.wrap{padding-left:14px;padding-right:14px}
+  .fb{top:47px}
+  .grid{grid-template-columns:1fr}
+  .hd-m{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <span class="hd-t">📋 104 每日職缺</span>
+  <div class="hd-m"><span id="vis">53</span> / 53 筆 &nbsp;·&nbsp; 2026/04/27</div>
+  <button class="hd-btn pr" onclick="triggerWorkflow()">▶ 觸發</button>
+  <button class="hd-btn" onclick="openDrawer()">⚙ 設定</button>
+</div>
+
+<div class="fb">
+  <div class="fg"><span class="fl">地區</span><div class="chips" id="ac"></div></div>
+  <div class="vs"></div>
+  <div class="fg"><span class="fl">關鍵字</span><div class="chips" id="kc"></div></div>
+  <div class="vs"></div>
+  <div class="fg"><span class="fl">薪資</span><select class="fsel" id="ss"><option value="">全部</option></select></div>
+  <div class="vs"></div>
+  <input class="sbox" id="sb" placeholder="搜尋職缺、公司…" type="text">
+</div>
+
+<div class="wrap">
+  <div class="empty" id="empty" style="display:none">沒有符合條件的職缺</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- Settings drawer -->
+<div class="ov" id="ov" onclick="closeDrawer()"></div>
+<div class="dr" id="dr">
+  <div class="dr-hd">
+    <span class="dr-title">⚙ 設定 & 操作</span>
+    <button class="dr-x" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="dr-body">
+    <div class="dsec">
+      <span class="dl">GitHub Personal Access Token</span>
+      <input class="di" id="pat" type="password" placeholder="ghp_xxxx... 或 fine-grained token">
+      <p class="dh">需要 <b>repo</b> + <b>workflow</b> 權限，僅存於本機瀏覽器 localStorage</p>
+    </div>
+
+    <button class="db pr" id="trig-btn" onclick="triggerOnly()">▶ 立即觸發爬蟲</button>
+
+    <hr class="sep">
+
+    <div class="dsec">
+      <span class="dl">Config.yaml 編輯</span>
+      <textarea class="di" id="cfg-editor"></textarea>
+      <p class="dh">儲存後可選擇是否同時觸發爬蟲</p>
+    </div>
+    <button class="db pr" onclick="saveAndTrigger()">💾 儲存 + 觸發</button>
+    <button class="db sc" onclick="saveConfigOnly()">💾 僅儲存 Config</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const JOBS   = [{"id": "12927383", "title": "系統軟體測試工程師 RFDS", "company": "思達科技股份有限公司", "location": "新竹市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/7p2tz", "keyword": "軟體測試", "city": "新竹市", "salary_bucket": "面議"}, {"id": "15114051", "title": "測試工程師", "company": "智通聯網科技股份有限公司", "location": "新竹市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8zy2r", "keyword": "測試工程師", "city": "新竹市", "salary_bucket": "面議"}, {"id": "6057707", "title": "測試工程師", "company": "智通聯網科技股份有限公司", "location": "新竹市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/3lu5n", "keyword": "測試工程師", "city": "新竹市", "salary_bucket": "面議"}, {"id": "7417721", "title": "自動化測試工程師(工作地點：新竹)", "company": "星通資訊股份有限公司", "location": "新竹市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/4ezjt", "keyword": "自動化測試", "city": "新竹市", "salary_bucket": "面議"}, {"id": "4650787", "title": "產品自動化測試工程師", "company": "星通資訊股份有限公司", "location": "新竹市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/2rokj", "keyword": "自動化測試", "city": "新竹市", "salary_bucket": "面議"}, {"id": "14714402", "title": "S - Embedded Software Engineer(Hsinchu)", "company": "緯創軟體股份有限公司", "location": "新竹市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8rdpe", "keyword": "軟體品質保證", "city": "新竹市", "salary_bucket": "面議"}, {"id": "14957776", "title": "車用品保部-資深QA工程師", "company": "矽格股份有限公司", "location": "新竹縣湖口鄉", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8wlhs", "keyword": "QA", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "14936114", "title": "測試工程師", "company": "福珞爾台灣股份有限公司", "location": "新竹縣湖口鄉", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8w4s2", "keyword": "測試工程師", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "15052737", "title": "測試工程師", "company": "安格科技股份有限公司", "location": "新竹縣竹北市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8ymrl", "keyword": "測試工程師", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "15148203", "title": "光模塊測試工程師-實習生 (L4000S)", "company": "智邦科技股份有限公司", "location": "新竹縣竹北市", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/90off", "keyword": "測試工程師", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "14772985", "title": "FAE測試工程師", "company": "翌勤通訊股份有限公司", "location": "新竹縣寶山鄉", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8smwp", "keyword": "測試工程師", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "14902970", "title": "Testing Engineer/ 產品測試工程師", "company": "福珞爾台灣股份有限公司", "location": "新竹縣湖口鄉", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8vf7e", "keyword": "測試工程師", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "14601562", "title": "T－測試工程師 QA （新竹）", "company": "緯創軟體股份有限公司", "location": "新竹縣寶山鄉", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8oymy", "keyword": "軟體品質保證", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "14601556", "title": "T－（行動服務）測試工程師 QA （新竹）", "company": "緯創軟體股份有限公司", "location": "新竹縣寶山鄉", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8oyms", "keyword": "軟體品質保證", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "14601618", "title": "T－（AI）全端工程師 （新竹）", "company": "緯創軟體股份有限公司", "location": "新竹縣寶山鄉", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8oyoi", "keyword": "軟體品質保證", "city": "新竹縣", "salary_bucket": "面議"}, {"id": "15066497", "title": "外商電腦 - SDET, Automation QA Engineer", "company": "TechTalent_天合科技顧問有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8yxdt", "keyword": "SDET", "city": "台北市", "salary_bucket": "面議"}, {"id": "13753583", "title": "軟體測試開發工程師｜SDET", "company": "街口電子支付股份有限公司", "location": "台北市松山區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/86sbz", "keyword": "SDET", "city": "台北市", "salary_bucket": "面議"}, {"id": "9914942", "title": "資深軟體測試開發工程師｜Senior SDET", "company": "街口電子支付股份有限公司", "location": "台北市松山區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/5wif2", "keyword": "SDET", "city": "台北市", "salary_bucket": "面議"}, {"id": "15114671", "title": "營造 ISO 品管稽查員（ISO 9001）(台北)", "company": "大三億營造股份有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8zyjz", "keyword": "QA", "city": "台北市", "salary_bucket": "面議"}, {"id": "14555530", "title": "內業工程師", "company": "慶耀營造有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8nz4a", "keyword": "QA", "city": "台北市", "salary_bucket": "面議"}, {"id": "14290059", "title": "QA 自動化測試工程師", "company": "干城數碼有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8iaa3", "keyword": "QA", "city": "台北市", "salary_bucket": "面議"}, {"id": "15120948", "title": "JAVA後端組長 / Backend Team Lead (Java)", "company": "糖蛙線上娛樂股份有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/903ec", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "10311874", "title": "軟體測試QA工程師", "company": "云智資訊股份有限公司", "location": "台北市松山區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/650oy", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "15159516", "title": "QA 軟體測試工程師", "company": "機童科技有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/90x5o", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "10109108", "title": "Senior QA Engineer 軟體測試工程師", "company": "摩速科技有限公司", "location": "台北市大安區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/60o8k", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "14929319", "title": "軟體測試工程師 QA", "company": "準進科技有限公司", "location": "台北市內湖區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8vzjb", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "10882641", "title": "Test Automation Developer 自動化測試開發工程師", "company": "威睿科技股份有限公司", "location": "台北市內湖區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/6h93l", "keyword": "自動化測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "14785050", "title": "自動化測試工程師-可全遠端", "company": "谷戈耳科技有限公司", "location": "台北市中正區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8sw7u", "keyword": "自動化測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "15147384", "title": "知名IT服務外商【PC 測試工程師】G85", "company": "精英人力資源股份有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/90nso", "keyword": "自動化測試工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "13363521", "title": "Front end Developer 前端工程師", "company": "新加坡商威兆科技有限公司台灣分公司", "location": "台北市內湖區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/7yfcx", "keyword": "軟體品質保證", "city": "台北市", "salary_bucket": "面議"}, {"id": "15120456", "title": "AI 產品策略師 AI Product Strategist", "company": "宇泰華科技股份有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/9030o", "keyword": "軟體品質保證", "city": "台北市", "salary_bucket": "面議"}, {"id": "8934357", "title": "資深JAVA後端工程師", "company": "糖蛙線上娛樂股份有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/5bhsl", "keyword": "品檢軟體工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "15025757", "title": "軟體開發工程師 Junior Software Engineer - .NET", "company": "宏碁資訊服務股份有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8y1y5", "keyword": "品檢軟體工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "15025678", "title": "資深軟體開發工程師 Senior .NET Software Engineer", "company": "宏碁資訊服務股份有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8y1vy", "keyword": "品檢軟體工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "14606703", "title": "Software Automation Test Engineer (軟體自動化測試QA/SDET工程師)", "company": "邁智微電子股份有限公司", "location": "新北市新店區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8p2lr", "keyword": "SDET", "city": "新北市", "salary_bucket": "面議"}, {"id": "13307815", "title": "Senior QA/SDET 資深軟體測試工程師(自動化測試)-N040", "company": "裕隆集團移動服務事業_格上汽車租賃股份有限公司", "location": "新北市新店區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/7x8dj", "keyword": "SDET", "city": "新北市", "salary_bucket": "面議"}, {"id": "13365226", "title": "品保_QA品質保證部級主管(土城廠)", "company": "大瓏企業股份有限公司", "location": "新北市土城區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/7ygoa", "keyword": "QA", "city": "新北市", "salary_bucket": "面議"}, {"id": "15136162", "title": "QA Engineer", "company": "美商宇心生醫股份有限公司台灣分公司", "location": "新北市中和區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/90f4y", "keyword": "QA", "city": "新北市", "salary_bucket": "面議"}, {"id": "14969530", "title": "軟體測試人員", "company": "碩網資訊股份有限公司", "location": "新北市新店區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8wuka", "keyword": "軟體測試", "city": "新北市", "salary_bucket": "面議"}, {"id": "8302209", "title": "T－Translator & Software Localization Specialist （Traditional Chinese – Taiwan / Hong Kong）（汐止總部）", "company": "緯創軟體股份有限公司", "location": "新北市汐止區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/4xy0x", "keyword": "軟體品質保證", "city": "新北市", "salary_bucket": "面議"}, {"id": "14759986", "title": "T－Translator & Software Localization Specialist （繁體中文－香港）（汐止總部）", "company": "緯創軟體股份有限公司", "location": "新北市汐止區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8scvm", "keyword": "軟體品質保證", "city": "新北市", "salary_bucket": "面議"}, {"id": "13247106", "title": "Senior Frontend Software Engineer", "company": "美商太陽鳥軟體股份有限公司台灣分公司", "location": "新北市新店區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/7vxj6", "keyword": "軟體品質保證", "city": "新北市", "salary_bucket": "面議"}, {"id": "13246164", "title": "Associate Frontend Software Engineer (研發替代役亦可)", "company": "美商太陽鳥軟體股份有限公司台灣分公司", "location": "新北市新店區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/7vwt0", "keyword": "軟體品質保證", "city": "新北市", "salary_bucket": "面議"}, {"id": "15007858", "title": "A－QA Engineer （汐止總部）", "company": "緯創軟體股份有限公司", "location": "新北市汐止區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8xo4y", "keyword": "軟體品質保證", "city": "新北市", "salary_bucket": "面議"}, {"id": "15099682", "title": "A-  DevOps Engineer (Global Project)", "company": "緯創軟體股份有限公司", "location": "新北市汐止區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8zmzm", "keyword": "軟體品質保證", "city": "新北市", "salary_bucket": "面議"}, {"id": "15026772", "title": "資深軟體開發工程師", "company": "陽明生醫股份有限公司", "location": "新北市中和區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8y2qc", "keyword": "品檢軟體工程師", "city": "新北市", "salary_bucket": "面議"}, {"id": "14372955", "title": "前台軟體設計工程師", "company": "艾盛科技股份有限公司", "location": "新北市三重區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8k28r", "keyword": "品檢軟體工程師", "city": "新北市", "salary_bucket": "面議"}, {"id": "14722291", "title": "品質保證(QA)主管(專員)", "company": "雷虎生技股份有限公司", "location": "台中市西屯區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8rjsj", "keyword": "QA", "city": "其他", "salary_bucket": "面議"}, {"id": "15068873", "title": "QA工程師", "company": "長聯科技股份有限公司", "location": "台中市北屯區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8yz7t", "keyword": "QA", "city": "其他", "salary_bucket": "面議"}, {"id": "15059626", "title": "Quality assurance engineer", "company": "瑞典商歐林斯集團有限公司台灣分公司", "location": "台中市大甲區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8ys2y", "keyword": "QA", "city": "其他", "salary_bucket": "面議"}, {"id": "14863241", "title": "測試工程師", "company": "大象數位科技有限公司", "location": "台中市西屯區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8ukjt", "keyword": "測試工程師", "city": "其他", "salary_bucket": "面議"}, {"id": "14278828", "title": "軟體設計工程師", "company": "宸昕資訊股份有限公司", "location": "台中市西屯區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/8i1m4", "keyword": "品檢軟體工程師", "city": "其他", "salary_bucket": "面議"}, {"id": "15158932", "title": "軟體工程師", "company": "佳靖科技股份有限公司", "location": "台中市龍井區", "salary": "面議", "experience": "", "education": "", "date": "20260427", "url": "https://www.104.com.tw/job/90wpg", "keyword": "品檢軟體工程師", "city": "其他", "salary_bucket": "面議"}];
+const COLORS = {"桃園市": "#e67e22", "新竹市": "#27ae60", "新竹縣": "#2ecc71", "台北市": "#2980b9", "新北市": "#8e44ad", "其他": "#7f8c8d"};
+const SORD   = ["面議", "時薪", "3萬以下", "3~4萬", "4~5萬", "5~6萬", "6~8萬", "8萬以上"];
+const CFG_YAML = "# ============================================================\n#  104 職缺爬蟲設定檔\n#  修改後重新執行 / 推上 GitHub 即生效\n# ============================================================\n\nsearch:\n  keywords:\n    - SDET\n    - QA\n    - 軟體測試\n    - 軟體測試工程師\n    - 測試工程師\n    - 自動化測試\n    - 自動化測試工程師\n    - 軟體品質保證\n    - 軟體品質保證工程師\n    - 品檢軟體工程師\n    \n\n  areas:\n    - 台北市\n    - 新北市\n    - 桃園市\n    - 新竹市\n    - 新竹縣\n\n  # 每個關鍵字最多抓幾頁（每頁約 40 筆）\n  max_pages: 3\n\n  # true = 只顯示今日更新職缺；false = 顯示全部搜尋結果\n  today_only: true\n\nnotification:\n  email:\n    enabled: true\n    # 收件人清單（可多個）\n    recipients:\n      - owen901031@gmail.com\n\n  telegram:\n    enabled: false\n    # Bot Token 與 Chat ID 請設定在 .env 或 GitHub Secrets\n    # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID\n";
+
+const REPO = 'AlienYukii/104crawler_yoookiiiizh';
+const WFID = 'daily_crawl.yml';
+
+let sA=new Set(), sK=new Set(), sS='', sQ='';
+
+// ── Filters ─────────────────────────────────────────────────────
+
+function init(){
+  const areas = uniq(JOBS.map(j=>j.city));
+  const kws   = uniq(JOBS.map(j=>j.keyword)).sort();
+  const bkts  = uniq(JOBS.map(j=>j.salary_bucket))
+                  .sort((a,b)=>SORD.indexOf(a)-SORD.indexOf(b));
+  mk('ac', areas, sA);
+  mk('kc', kws,   sK);
+  const sel=document.getElementById('ss');
+  bkts.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o)});
+  sel.onchange=()=>{sS=sel.value; go()};
+  document.getElementById('sb').oninput=e=>{sQ=e.target.value.toLowerCase(); go()};
+  go();
+}
+
+function uniq(a){return[...new Set(a)]}
+
+function mk(id,vals,set){
+  const w=document.getElementById(id);
+  const all=chip('全部',true);
+  all.onclick=()=>{set.clear();go()};
+  w.appendChild(all);
+  vals.forEach(v=>{
+    const c=chip(v,false);
+    c.onclick=()=>{set.has(v)?set.delete(v):set.add(v);go()};
+    w.appendChild(c);
+  });
+}
+
+function chip(txt,on){
+  const c=document.createElement('span');
+  c.className='chip'+(on?' on':'');
+  c.textContent=txt;
+  return c;
+}
+
+function sync(id,set){
+  [...document.getElementById(id).children].forEach(c=>{
+    c.classList.toggle('on', c.textContent==='全部'?set.size===0:set.has(c.textContent));
+  });
+}
+
+function go(){
+  sync('ac',sA); sync('kc',sK);
+  const out=JOBS.filter(j=>{
+    if(sA.size&&!sA.has(j.city))         return false;
+    if(sK.size&&!sK.has(j.keyword))      return false;
+    if(sS&&j.salary_bucket!==sS)         return false;
+    if(sQ&&!(j.title+j.company+j.location).toLowerCase().includes(sQ)) return false;
+    return true;
+  });
+  document.getElementById('vis').textContent=out.length;
+  document.getElementById('empty').style.display=out.length?'none':'block';
+  const g=document.getElementById('grid');
+  g.innerHTML='';
+  out.forEach(j=>g.appendChild(mkCard(j)));
+}
+
+function mkCard(j){
+  const col=COLORS[j.city]||'#7f8c8d';
+  const d=j.date&&j.date.length===8
+    ?j.date.slice(0,4)+'/'+j.date.slice(4,6)+'/'+j.date.slice(6,8)
+    :j.date||'–';
+  const el=document.createElement('div');
+  el.className='card';
+  el.innerHTML=`
+    <div class="cm">
+      <a class="ct" href="${x(j.url)}" target="_blank" onclick="event.stopPropagation()">${x(j.title)}</a>
+      <div class="cc">${x(j.company)}</div>
+      <div class="bdgs">
+        <span class="bdg bc" style="background:${col}">${x(j.city)}</span>
+        <span class="bdg bs">${x(j.salary)}</span>
+        <span class="bdg bk">${x(j.keyword)}</span>
+      </div>
+    </div>
+    <div class="prev">
+      <div class="prow">
+        ${j.location  ?`<div class="pi">📍 <b>${x(j.location)}</b></div>`:''}
+        ${j.experience?`<div class="pi">⏱ <b>${x(j.experience)}</b></div>`:''}
+        ${j.education ?`<div class="pi">🎓 <b>${x(j.education)}</b></div>`:''}
+      </div>
+    </div>
+    <div class="cf">
+      <span class="fd">📅 ${d}</span>
+      <a class="fbl" href="${x(j.url)}" target="_blank" onclick="event.stopPropagation()">查看詳情 →</a>
+    </div>`;
+  el.addEventListener('click',()=>window.open(j.url,'_blank'));
+  return el;
+}
+
+function x(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Drawer ───────────────────────────────────────────────────────
+
+function openDrawer(){
+  const saved=localStorage.getItem('gh_pat')||'';
+  if(saved) document.getElementById('pat').value=saved;
+  document.getElementById('cfg-editor').value=CFG_YAML;
+  document.getElementById('ov').classList.add('show');
+  document.getElementById('dr').classList.add('show');
+}
+
+function closeDrawer(){
+  document.getElementById('ov').classList.remove('show');
+  document.getElementById('dr').classList.remove('show');
+}
+
+function getPAT(){
+  const p=document.getElementById('pat').value.trim();
+  if(p) localStorage.setItem('gh_pat',p);
+  return p;
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+
+function toast(msg,ok=true){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast show '+(ok?'ok':'err');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.className='toast',3500);
+}
+
+// ── GitHub API ───────────────────────────────────────────────────
+
+async function triggerWorkflow(){
+  const pat=getPAT();
+  if(!pat){openDrawer();toast('請先在設定中填入 GitHub Token',false);return;}
+  const btn=document.getElementById('trig-btn');
+  btn.disabled=true; btn.classList.add('loading');
+  try{
+    const r=await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${WFID}/dispatches`,{
+      method:'POST',
+      headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({ref:'main'})
+    });
+    r.status===204?toast('✅ 已觸發！約 5 分鐘後更新頁面'):toast(`❌ 觸發失敗 (${r.status})`,false);
+  }catch(e){toast('❌ 網路錯誤',false);}
+  btn.disabled=false; btn.classList.remove('loading');
+}
+
+async function triggerOnly(){await triggerWorkflow();}
+
+async function doSaveConfig(){
+  const pat=getPAT();
+  if(!pat){toast('請先填入 GitHub Token',false);return false;}
+  const content=document.getElementById('cfg-editor').value;
+  try{
+    const g=await fetch(`https://api.github.com/repos/${REPO}/contents/config.yaml`,{
+      headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github+json'}
+    });
+    if(!g.ok){toast(`❌ 讀取 config 失敗 (${g.status})`,false);return false;}
+    const {sha}=await g.json();
+    const u=await fetch(`https://api.github.com/repos/${REPO}/contents/config.yaml`,{
+      method:'PUT',
+      headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        message:'chore: update config via web UI',
+        content:btoa(unescape(encodeURIComponent(content))),
+        sha,branch:'main'
+      })
+    });
+    if(u.ok){toast('✅ Config 已更新');return true;}
+    else{toast(`❌ 更新失敗 (${u.status})`,false);return false;}
+  }catch(e){toast('❌ 網路錯誤',false);return false;}
+}
+
+async function saveAndTrigger(){
+  const ok=await doSaveConfig();
+  if(ok) await triggerOnly();
+}
+
+async function saveConfigOnly(){await doSaveConfig();}
+
+init();
+</script>
+</body>
+</html>
