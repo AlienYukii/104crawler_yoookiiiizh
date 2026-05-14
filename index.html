@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>104 職缺 — 2026/05/13</title>
+<title>104 職缺 — 2026/05/14</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#2c3e50}
@@ -97,7 +97,7 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 
 <div class="hd">
   <span class="hd-t">📋 104 每日職缺</span>
-  <div class="hd-m"><span id="vis">3</span> / 3 筆 &nbsp;·&nbsp; 2026/05/13</div>
+  <div class="hd-m"><span id="vis">3</span> / 3 筆 &nbsp;·&nbsp; 2026/05/14</div>
   <button class="hd-btn pr" onclick="triggerWorkflow()">▶ 觸發</button>
   <button class="hd-btn" onclick="openDrawer()">⚙ 設定</button>
 </div>
@@ -148,7 +148,7 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 <div class="toast" id="toast"></div>
 
 <script>
-const JOBS   = [{"id": "14939060", "title": "全自動化測試工程師 Automation Test Engineer", "company": "創順科技有限公司", "location": "台北市內湖區", "salary": "面議", "experience": "", "education": "", "date": "20260513", "url": "https://www.104.com.tw/job/8w71w", "keyword": "自動化測試工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "12682808", "title": "自動化測試工程師", "company": "雷技資訊科技有限公司", "location": "台北市南港區", "salary": "面議", "experience": "", "education": "", "date": "20260513", "url": "https://www.104.com.tw/job/7ju48", "keyword": "自動化測試工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "13122097", "title": "測試工程師 Quality Assurance Engineer", "company": "創順科技有限公司", "location": "台北市內湖區", "salary": "面議", "experience": "", "education": "", "date": "20260513", "url": "https://www.104.com.tw/job/7t92p", "keyword": "軟體品質保證工程師", "city": "台北市", "salary_bucket": "面議"}];
+const JOBS   = [{"id": "14838487", "title": "<產品開發> 自動化測試工程師", "company": "聯和科創股份有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20260514", "url": "https://www.104.com.tw/job/8u1g7", "keyword": "自動化測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "15188640", "title": "測試職務_請勿應徵_web_qa_e2e_newweb_自動化測試申請新職缺", "company": "104測試_招募公司(請勿應徵)", "location": "台北市中正區", "salary": "面議", "experience": "", "education": "", "date": "20260514", "url": "https://www.104.com.tw/job/91jmo", "keyword": "自動化測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "14838492", "title": "<產品開發> 資深自動化測試工程師", "company": "聯和科創股份有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20260514", "url": "https://www.104.com.tw/job/8u1gc", "keyword": "自動化測試", "city": "台北市", "salary_bucket": "面議"}];
 const COLORS = {"桃園市": "#e67e22", "新竹市": "#27ae60", "新竹縣": "#2ecc71", "台北市": "#2980b9", "新北市": "#8e44ad", "其他": "#7f8c8d"};
 const SORD   = ["面議", "時薪", "3萬以下", "3~4萬", "4~5萬", "5~6萬", "6~8萬", "8萬以上"];
 const CFG_YAML = "# ============================================================\n#  104 職缺爬蟲設定檔\n#  修改後重新執行 / 推上 GitHub 即生效\n# ============================================================\n\nsearch:\n  keywords:\n    - SDET\n    - QA\n    - 軟體測試\n    - 軟體測試工程師\n    - 測試工程師\n    - 自動化測試\n    - 自動化測試工程師\n    - 軟體品質保證\n    - 軟體品質保證工程師\n    - 品檢軟體工程師\n    \n\n  areas:\n    - 台北市\n    - 新北市\n    - 桃園市\n    - 新竹市\n    - 新竹縣\n\n  # 每個關鍵字最多抓幾頁（每頁約 40 筆）\n  max_pages: 3\n\n  # true = 只顯示今日更新職缺；false = 顯示全部搜尋結果\n  today_only: true\n\nnotification:\n  email:\n    enabled: true\n    # 收件人清單（可多個）\n    recipients:\n      - owen901031@gmail.com\n\n  telegram:\n    enabled: false\n    # Bot Token 與 Chat ID 請設定在 .env 或 GitHub Secrets\n    # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID\n";
