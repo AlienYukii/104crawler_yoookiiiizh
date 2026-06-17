@@ -67,7 +67,7 @@ def crawl_all(config: dict) -> list[dict]:
         print('[*] 初始化瀏覽器，訪問 104 首頁...')
         try:
             page.goto('https://www.104.com.tw/jobs/search/',
-                      wait_until='networkidle', timeout=30000)
+                      wait_until='domcontentloaded', timeout=30000)
         except Exception as e:
             print(f'  [!] 首頁載入超時（繼續執行）: {e}')
         time.sleep(2)
@@ -85,27 +85,20 @@ def crawl_all(config: dict) -> list[dict]:
                 )
 
                 raw_list: list[dict] = []
-
-                def _on_resp(response, _raw=raw_list):
-                    if API_PATH in response.url:
-                        print(f'    [DEBUG] API hit status={response.status} url={response.url[:80]}')
-                        try:
-                            data = response.json()
-                            items = data.get('data', []) or []
-                            print(f'    [DEBUG] API returned {len(items)} items')
-                            _raw.extend(items)
-                        except Exception as ex:
-                            print(f'    [DEBUG] JSON parse error: {ex}')
-
-                page.on('response', _on_resp)
                 try:
-                    page.goto(url, wait_until='networkidle', timeout=25000)
-                    print(f'    [DEBUG] page title: {page.title()[:60]!r}')
-                    time.sleep(1)
+                    with page.expect_response(
+                        lambda r: API_PATH in r.url and r.status == 200,
+                        timeout=30000
+                    ) as resp_info:
+                        page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                    resp = resp_info.value
+                    print(f'    [DEBUG] API hit status={resp.status} url={resp.url[:80]}')
+                    data = resp.json()
+                    items = data.get('data', []) or []
+                    print(f'    [DEBUG] API returned {len(items)} items')
+                    raw_list.extend(items)
                 except Exception as e:
-                    print(f'  [!] 頁面載入失敗 keyword={keyword} page={pg}: {e}')
-                finally:
-                    page.remove_listener('response', _on_resp)
+                    print(f'  [!] 頁面載入或 API 等待失敗 keyword={keyword} page={pg}: {e}')
 
                 if not raw_list:
                     print(f'    [DEBUG] no API response captured, stopping at page {pg}')
