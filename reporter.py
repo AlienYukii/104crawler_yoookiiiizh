@@ -98,6 +98,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fsel:focus{border-color:#1a73e8}
 .sbox{padding:4px 11px;border:1.5px solid #ddd;border-radius:12px;font-size:.75rem;outline:none;min-width:140px}
 .sbox:focus{border-color:#1a73e8}
+.fdate{padding:3px 8px;border:1.5px solid #ddd;border-radius:12px;font-size:.75rem;background:#fff;color:#555;cursor:pointer;outline:none}
+.fdate:focus{border-color:#1a73e8}
+.fdate::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
 
 .wrap{padding:16px 24px}
 .empty{text-align:center;padding:56px;color:#bbb;font-size:.9rem}
@@ -180,6 +183,13 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
   <div class="vs"></div>
   <div class="fg"><span class="fl">薪資</span><select class="fsel" id="ss"><option value="">全部</option></select></div>
   <div class="vs"></div>
+  <div class="fg"><span class="fl">日期</span>
+    <input type="date" class="fdate" id="df" title="開始日期">
+    <span style="font-size:.7rem;color:#bbb">–</span>
+    <input type="date" class="fdate" id="dt" title="結束日期">
+    <button class="chip" id="dc" onclick="clearDate()" title="清除日期">✕</button>
+  </div>
+  <div class="vs"></div>
   <input class="sbox" id="sb" placeholder="搜尋職缺、公司…" type="text">
 </div>
 
@@ -227,7 +237,7 @@ const CFG_YAML = "__CFG_YAML__";
 const REPO = 'AlienYukii/104crawler_yoookiiiizh';
 const WFID = 'daily_crawl.yml';
 
-let sA=new Set(), sK=new Set(), sS='', sQ='';
+let sA=new Set(), sK=new Set(), sS='', sQ='', sDF='', sDT='';
 
 // ── Filters ─────────────────────────────────────────────────────
 
@@ -242,6 +252,18 @@ function init(){
   bkts.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o)});
   sel.onchange=()=>{sS=sel.value; go()};
   document.getElementById('sb').oninput=e=>{sQ=e.target.value.toLowerCase(); go()};
+
+  // datepicker: auto-fill max date range from data
+  const dates=JOBS.map(j=>j.date||'').filter(d=>d.length===8).sort();
+  if(dates.length){
+    const toISO=d=>d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);
+    const dfEl=document.getElementById('df');
+    const dtEl=document.getElementById('dt');
+    dfEl.min=dtEl.min=toISO(dates[0]);
+    dfEl.max=dtEl.max=toISO(dates[dates.length-1]);
+    dfEl.onchange=()=>{sDF=dfEl.value.replace(/-/g,''); go();};
+    dtEl.onchange=()=>{sDT=dtEl.value.replace(/-/g,''); go();};
+  }
   go();
 }
 
@@ -279,6 +301,8 @@ function go(){
     if(sK.size&&!sK.has(j.keyword))      return false;
     if(sS&&j.salary_bucket!==sS)         return false;
     if(sQ&&!(j.title+j.company+j.location).toLowerCase().includes(sQ)) return false;
+    if(sDF&&(j.date||'') < sDF) return false;
+    if(sDT&&(j.date||'') > sDT) return false;
     return true;
   });
   document.getElementById('vis').textContent=out.length;
@@ -318,6 +342,12 @@ function mkCard(j){
     </div>`;
   el.addEventListener('click',()=>window.open(j.url,'_blank'));
   return el;
+}
+
+function clearDate(){
+  document.getElementById('df').value='';
+  document.getElementById('dt').value='';
+  sDF=''; sDT=''; go();
 }
 
 function x(s){
