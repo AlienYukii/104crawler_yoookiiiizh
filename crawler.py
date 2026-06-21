@@ -1,7 +1,8 @@
 import time
 import urllib.parse
 from datetime import datetime, timezone, timedelta
-from playwright.sync_api import sync_playwright
+
+import requests
 
 AREA_CODES = {
     '台北市': '6001001000',
@@ -11,8 +12,18 @@ AREA_CODES = {
     '新竹縣': '6001006000',
 }
 
-API_PATH    = '/jobs/search/api/jobs'
-TAIPEI_TZ   = timezone(timedelta(hours=8))
+API_URL  = 'https://www.104.com.tw/jobs/search/api/jobs'
+TAIPEI_TZ = timezone(timedelta(hours=8))
+
+_HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/124.0.0.0 Safari/537.36'
+    ),
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+}
 
 
 def today_taipei() -> str:
@@ -49,81 +60,73 @@ def crawl_all(config: dict) -> list[dict]:
     seen_ids: set[str] = set()
     all_jobs:  list[dict] = []
 
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(
-            headless=True,
-            args=['--no-sandbox', '--disable-dev-shm-usage'],
+    session = requests.Session()
+    session.headers.update(_HEADERS)
+
+    # warm-up: 取得首頁 cookies
+    print('[*] 初始化 session，訪問 104 首頁...')
+    try:
+        session.get('https://www.104.com.tw/jobs/search/', timeout=15)
+    except Exception as e:
+        print(f'  [!] 首頁初始化失敗（繼續執行）: {e}')
+    time.sleep(1)
+
+    for keyword in keywords:
+        print(f'[*] 搜尋: {keyword}')
+        kw_count = 0
+        kw_enc   = urllib.parse.quote(keyword, safe='')
+        referer  = (
+            f'https://www.104.com.tw/jobs/search/'
+            f'?keyword={kw_enc}&area={area_param}'
+            f'&order=15&asc=0&page=1&mode=s'
         )
-        context = browser.new_context(
-            locale='zh-TW',
-            user_agent=(
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                'AppleWebKit/537.36 (KHTML, like Gecko) '
-                'Chrome/124.0.0.0 Safari/537.36'
-            ),
-        )
-        page = context.new_page()
 
-        print('[*] 初始化瀏覽器，訪問 104 首頁...')
-        try:
-            page.goto('https://www.104.com.tw/jobs/search/',
-                      wait_until='domcontentloaded', timeout=30000)
-        except Exception as e:
-            print(f'  [!] 首頁載入超時（繼續執行）: {e}')
-        time.sleep(2)
-
-        for keyword in keywords:
-            print(f'[*] 搜尋: {keyword}')
-            kw_count = 0
-            kw_enc = urllib.parse.quote(keyword, safe='')
-
-            for pg in range(1, max_pages + 1):
-                url = (
-                    f'https://www.104.com.tw/jobs/search/?'
-                    f'keyword={kw_enc}&area={area_param}'
-                    f'&order=15&asc=0&page={pg}&mode=s'
+        for pg in range(1, max_pages + 1):
+            params = {
+                'keyword':   keyword,
+                'area':      area_param,
+                'order':     '15',
+                'asc':       '0',
+                'page':      str(pg),
+                'mode':      's',
+                'jobsource': '2018indexpoc',
+            }
+            try:
+                resp = session.get(
+                    API_URL,
+                    params=params,
+                    headers={'Referer': referer},
+                    timeout=20,
                 )
+                resp.raise_for_status()
+                data  = resp.json()
+                items = data.get('data', []) or []
+                print(f'    [DEBUG] page={pg} status={resp.status_code} items={len(items)}')
+            except Exception as e:
+                print(f'  [!] API 請求失敗 keyword={keyword} page={pg}: {e}')
+                break
 
-                raw_list: list[dict] = []
-                try:
-                    with page.expect_response(
-                        lambda r: API_PATH in r.url and r.status == 200,
-                        timeout=30000
-                    ) as resp_info:
-                        page.goto(url, wait_until='domcontentloaded', timeout=30000)
-                    resp = resp_info.value
-                    print(f'    [DEBUG] API hit status={resp.status} url={resp.url[:80]}')
-                    data = resp.json()
-                    items = data.get('data', []) or []
-                    print(f'    [DEBUG] API returned {len(items)} items')
-                    raw_list.extend(items)
-                except Exception as e:
-                    print(f'  [!] 頁面載入或 API 等待失敗 keyword={keyword} page={pg}: {e}')
+            if not items:
+                break
 
-                if not raw_list:
-                    print(f'    [DEBUG] no API response captured, stopping at page {pg}')
-                    break
+            page_had_today = False
+            for raw in items:
+                appear_date = raw.get('appearDate', '')
+                if today_only and appear_date != today:
+                    continue
+                page_had_today = True
+                job = _parse_job(raw, keyword)
+                if job['id'] not in seen_ids:
+                    seen_ids.add(job['id'])
+                    all_jobs.append(job)
+                    kw_count += 1
 
-                page_had_today = False
-                for raw in raw_list:
-                    appear_date = raw.get('appearDate', '')
-                    if today_only and appear_date != today:
-                        continue
-                    page_had_today = True
-                    job = _parse_job(raw, keyword)
-                    if job['id'] not in seen_ids:
-                        seen_ids.add(job['id'])
-                        all_jobs.append(job)
-                        kw_count += 1
+            if today_only and not page_had_today:
+                break
 
-                if today_only and not page_had_today:
-                    break
+            time.sleep(0.8)
 
-                time.sleep(1)
-
-            print(f'    → 今日新增 {kw_count} 筆 (累計去重 {len(all_jobs)} 筆)')
-            time.sleep(0.5)
-
-        browser.close()
+        print(f'    → 今日新增 {kw_count} 筆 (累計去重 {len(all_jobs)} 筆)')
+        time.sleep(0.5)
 
     return all_jobs
