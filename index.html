@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>104 職缺 — 2026/06/27</title>
+<title>104 職缺 — 2026/06/28</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#2c3e50}
@@ -100,7 +100,7 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 
 <div class="hd">
   <span class="hd-t">📋 104 每日職缺</span>
-  <div class="hd-m"><span id="vis">2</span> / 2 筆 &nbsp;·&nbsp; 2026/06/27</div>
+  <div class="hd-m"><span id="vis">0</span> / 0 筆 &nbsp;·&nbsp; 2026/06/28</div>
   <button class="hd-btn pr" onclick="triggerWorkflow()">▶ 觸發</button>
   <button class="hd-btn" onclick="openDrawer()">⚙ 設定</button>
 </div>
@@ -158,7 +158,7 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 <div class="toast" id="toast"></div>
 
 <script>
-const JOBS   = [{"id": "14986803", "title": "【C007】QA軟體測試工程師（Web）", "company": "一騰資訊服務股份有限公司", "location": "台北市信義區", "salary": "面議", "experience": "", "education": "", "date": "20260627", "url": "https://www.104.com.tw/job/8x7w3", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "13222677", "title": "機器人軟體測試工程師", "company": "美商螳螂機器人科技股份有限公司台灣分公司", "location": "新北市汐止區", "salary": "面議", "experience": "", "education": "", "date": "20260627", "url": "https://www.104.com.tw/job/7veol", "keyword": "軟體測試", "city": "新北市", "salary_bucket": "面議"}];
+const JOBS   = [];
 const COLORS = {"桃園市": "#e67e22", "新竹市": "#27ae60", "新竹縣": "#2ecc71", "台北市": "#2980b9", "新北市": "#8e44ad", "其他": "#7f8c8d"};
 const SORD   = ["面議", "時薪", "3萬以下", "3~4萬", "4~5萬", "5~6萬", "6~8萬", "8萬以上"];
 const CFG_YAML = "# ============================================================\n#  104 職缺爬蟲設定檔\n#  修改後重新執行 / 推上 GitHub 即生效\n# ============================================================\n\nsearch:\n  keywords:\n    - SDET\n    - QA\n    - 軟體測試\n    - 軟體測試工程師\n    - 測試工程師\n    - 自動化測試\n    - 自動化測試工程師\n    - 軟體品質保證\n    - 軟體品質保證工程師\n    - 品檢軟體工程師\n    \n\n  areas:\n    - 台北市\n    - 新北市\n    - 桃園市\n    - 新竹市\n    - 新竹縣\n\n  # 每個關鍵字最多抓幾頁（每頁約 40 筆）\n  max_pages: 3\n\n  # true = 只顯示今日更新職缺；false = 顯示全部搜尋結果\n  today_only: true\n\nnotification:\n  email:\n    enabled: true\n    # 收件人清單（可多個）\n    recipients:\n      - owen901031@gmail.com\n\n  telegram:\n    enabled: false\n    # Bot Token 與 Chat ID 請設定在 .env 或 GitHub Secrets\n    # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID\n";
