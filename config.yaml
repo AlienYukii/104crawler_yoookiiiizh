@@ -38,6 +38,6 @@ notification:
       - owen901031@gmail.com
 
   telegram:
-    enabled: false
+    enabled: true
     # Bot Token 與 Chat ID 請設定在 .env 或 GitHub Secrets
     # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID
