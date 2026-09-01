@@ -1,3 +1,4 @@
+import csv as _csv
 import json
 import re
 from pathlib import Path
@@ -42,26 +43,64 @@ def _salary_bucket(desc: str) -> str:
     return '8萬以上'
 
 
-def save_html(jobs: list[dict], today: str, results_dir: Path,
-              config_yaml: str = '') -> Path:
+def _load_history(results_dir: Path, today_date_str: str, max_days: int = 7) -> list:
+    by_date: dict = {}
+    for f in results_dir.glob('*.csv'):
+        parts = f.stem.rsplit('-', 1)
+        if len(parts) != 2:
+            continue
+        date_key = parts[0]
+        if date_key == today_date_str:
+            continue
+        try:
+            seq = int(parts[1])
+        except ValueError:
+            continue
+        if date_key not in by_date or seq > by_date[date_key][0]:
+            by_date[date_key] = (seq, f)
+
+    result = []
+    for date_key, (_, f) in sorted(by_date.items(), reverse=True)[:max_days]:
+        try:
+            with open(f, encoding='utf-8-sig') as fh:
+                rows = list(_csv.DictReader(fh))
+            enriched = [
+                {**r,
+                 'city': _city(r.get('location', '')),
+                 'salary_bucket': _salary_bucket(r.get('salary', ''))}
+                for r in rows
+            ]
+            result.append({'date': date_key, 'count': len(enriched), 'jobs': enriched})
+        except Exception:
+            continue
+    return result
+
+
+def save_html(jobs: list, today: str, results_dir: Path, config_yaml: str = '') -> Path:
     enriched = [
         {**j,
          'city': _city(j.get('location', '')),
          'salary_bucket': _salary_bucket(j.get('salary', ''))}
         for j in jobs
     ]
-    jobs_j  = json.dumps(enriched,      ensure_ascii=False).replace('</', '<\\/')
-    color_j = json.dumps(_CITY_COLOR,   ensure_ascii=False)
-    sal_j   = json.dumps(_SALARY_ORDER, ensure_ascii=False)
-    cfg_j   = json.dumps(config_yaml,   ensure_ascii=False)
+
+    today_date_str = today.replace('/', '-')
+    history = _load_history(results_dir, today_date_str)
+
+    jobs_j    = json.dumps(enriched,      ensure_ascii=False).replace('</', '<\\/')
+    color_j   = json.dumps(_CITY_COLOR,   ensure_ascii=False)
+    sal_j     = json.dumps(_SALARY_ORDER, ensure_ascii=False)
+    cfg_j     = json.dumps(config_yaml,   ensure_ascii=False)
+    history_j = json.dumps(history,       ensure_ascii=False).replace('</', '<\\/')
 
     html = (_HTML
-            .replace('__TODAY__',       today)
-            .replace('__TOTAL__',       str(len(jobs)))
-            .replace('"__JOBS__"',      jobs_j)
-            .replace('"__COLORS__"',    color_j)
-            .replace('"__SALORD__"',    sal_j)
-            .replace('"__CFG_YAML__"',  cfg_j))
+            .replace('__TODAY__',      today)
+            .replace('__TOTAL__',      str(len(jobs)))
+            .replace('"__JOBS__"',     jobs_j)
+            .replace('"__COLORS__"',   color_j)
+            .replace('"__SALORD__"',   sal_j)
+            .replace('"__CFG_YAML__"', cfg_j)
+            .replace('"__HISTORY__"',  history_j))
 
     path = results_dir / 'index.html'
     path.write_text(html, encoding='utf-8')
@@ -78,6 +117,7 @@ _HTML = """<!DOCTYPE html>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#2c3e50}
+:root{--hh:51px;--tbh:30px}
 
 .hd{background:linear-gradient(120deg,#1558d6,#1a73e8);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.22)}
 .hd-t{font-size:1.1rem;font-weight:700}
@@ -86,7 +126,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .hd-btn:hover{background:rgba(255,255,255,.18)}
 .hd-btn.pr{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.9)}
 
-.fb{background:#fff;border-bottom:1px solid #e4e4e4;padding:9px 24px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;position:sticky;top:51px;z-index:99;box-shadow:0 2px 5px rgba(0,0,0,.05)}
+.tabbar{background:#fff;border-bottom:1px solid #e4e4e4;padding:0 24px;display:flex;align-items:stretch;position:sticky;top:var(--hh);z-index:99}
+.tabbtn{padding:8px 16px;border:none;border-bottom:2.5px solid transparent;background:none;cursor:pointer;font-size:.82rem;font-weight:600;color:#888;transition:color .15s,border-color .15s;white-space:nowrap;margin-bottom:-1px}
+.tabbtn.on{color:#1a73e8;border-bottom-color:#1a73e8}
+.tabbtn:hover:not(.on){color:#444}
+.tbcnt{background:#e8eaf6;color:#283593;padding:1px 5px;border-radius:9px;font-size:.68rem;font-weight:700;margin-left:4px;vertical-align:middle}
+.tabbtn.on .tbcnt{background:#1a73e8;color:#fff}
+
+.fb{background:#fff;border-bottom:1px solid #e4e4e4;padding:9px 24px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;position:sticky;top:calc(var(--hh) + var(--tbh));z-index:98;box-shadow:0 2px 5px rgba(0,0,0,.05)}
 .fg{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .fl{font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
@@ -101,6 +148,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fdate{padding:3px 8px;border:1.5px solid #ddd;border-radius:12px;font-size:.75rem;background:#fff;color:#555;cursor:pointer;outline:none}
 .fdate:focus{border-color:#1a73e8}
 .fdate::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
+
+.hist-row{width:100%;display:flex;align-items:center;gap:6px;min-width:0;padding-bottom:2px}
+.hist-row .chips{flex:1;display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding-bottom:3px}
+.hist-row .chips::-webkit-scrollbar{height:3px}
+.hist-row .chips::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px}
+.hist-row .chips .chip{white-space:nowrap;flex-shrink:0}
 
 .wrap{padding:16px 24px}
 .empty{text-align:center;padding:56px;color:#bbb;font-size:.9rem}
@@ -129,7 +182,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fbl{font-size:.7rem;color:#1558d6;font-weight:700;text-decoration:none;padding:2px 9px;border:1.5px solid #1558d6;border-radius:7px;transition:all .13s}
 .fbl:hover{background:#1558d6;color:#fff}
 
-/* drawer */
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200}
 .ov.show{display:block}
 .dr{position:fixed;right:0;top:0;bottom:0;width:360px;max-width:100vw;background:#fff;z-index:201;box-shadow:-4px 0 24px rgba(0,0,0,.16);transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;display:flex;flex-direction:column}
@@ -153,15 +205,14 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 .sep{border:none;border-top:1px solid #eee;margin:16px 0}
 .dsec{margin-bottom:14px}
 
-/* toast */
 .toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:9px;color:#fff;font-size:.82rem;font-weight:600;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;max-width:280px}
 .toast.show{opacity:1}
 .toast.ok{background:#2e7d32}
 .toast.err{background:#c62828}
 
 @media(max-width:640px){
-  .hd,.fb,.wrap{padding-left:14px;padding-right:14px}
-  .fb{top:47px}
+  :root{--hh:47px}
+  .hd,.tabbar,.fb,.wrap{padding-left:14px;padding-right:14px}
   .grid{grid-template-columns:1fr}
   .hd-m{display:none}
 }
@@ -171,12 +222,21 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 
 <div class="hd">
   <span class="hd-t">📋 104 每日職缺</span>
-  <div class="hd-m"><span id="vis">__TOTAL__</span> / __TOTAL__ 筆 &nbsp;·&nbsp; __TODAY__</div>
+  <div class="hd-m"><span id="vis">__TOTAL__</span> / <span id="total-cnt">__TOTAL__</span> 筆 &nbsp;·&nbsp; <span id="hd-date">__TODAY__</span></div>
   <button class="hd-btn pr" onclick="triggerWorkflow()">▶ 觸發</button>
   <button class="hd-btn" onclick="openDrawer()">⚙ 設定</button>
 </div>
 
+<div class="tabbar">
+  <button class="tabbtn on" id="tb-today" onclick="switchTab('today')">📅 今日職缺 <span class="tbcnt" id="tc-today">__TOTAL__</span></button>
+  <button class="tabbtn" id="tb-hist" onclick="switchTab('hist')">📚 歷史紀錄 <span class="tbcnt" id="tc-hist">…</span></button>
+</div>
+
 <div class="fb">
+  <div class="hist-row" id="hist-row" style="display:none">
+    <span class="fl">日期</span>
+    <div class="chips" id="hdc"></div>
+  </div>
   <div class="fg"><span class="fl">地區</span><div class="chips" id="ac"></div></div>
   <div class="vs"></div>
   <div class="fg"><span class="fl">關鍵字</span><div class="chips" id="kc"></div></div>
@@ -198,7 +258,6 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
   <div class="grid" id="grid"></div>
 </div>
 
-<!-- Settings drawer -->
 <div class="ov" id="ov" onclick="closeDrawer()"></div>
 <div class="dr" id="dr">
   <div class="dr-hd">
@@ -211,11 +270,8 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
       <input class="di" id="pat" type="password" placeholder="ghp_xxxx... 或 fine-grained token">
       <p class="dh">需要 <b>repo</b> + <b>workflow</b> 權限，僅存於本機瀏覽器 localStorage</p>
     </div>
-
     <button class="db pr" id="trig-btn" onclick="triggerOnly()">▶ 立即觸發爬蟲</button>
-
     <hr class="sep">
-
     <div class="dsec">
       <span class="dl">Config.yaml 編輯</span>
       <textarea class="di" id="cfg-editor"></textarea>
@@ -229,66 +285,160 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 <div class="toast" id="toast"></div>
 
 <script>
-const JOBS   = "__JOBS__";
-const COLORS = "__COLORS__";
-const SORD   = "__SALORD__";
-const CFG_YAML = "__CFG_YAML__";
+const JOBS    = "__JOBS__";
+const COLORS  = "__COLORS__";
+const SORD    = "__SALORD__";
+const CFG_YAML= "__CFG_YAML__";
+const HISTORY = "__HISTORY__";
+const TODAY_STR = '__TODAY__';
 
 const REPO = 'AlienYukii/104crawler_yoookiiiizh';
 const WFID = 'daily_crawl.yml';
 
 let sA=new Set(), sK=new Set(), sS='', sQ='', sDF='', sDT='';
+let activeJobs=JOBS, curTab='today', curHistDate=null;
 
-// ── Filters ─────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────
 
 function init(){
-  const areas = uniq(JOBS.map(j=>j.city));
-  const kws   = uniq(JOBS.map(j=>j.keyword)).sort();
-  const bkts  = uniq(JOBS.map(j=>j.salary_bucket))
-                  .sort((a,b)=>SORD.indexOf(a)-SORD.indexOf(b));
-  mk('ac', areas, sA);
-  mk('kc', kws,   sK);
-  const sel=document.getElementById('ss');
-  bkts.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o)});
-  sel.onchange=()=>{sS=sel.value; go()};
-  document.getElementById('sb').oninput=e=>{sQ=e.target.value.toLowerCase(); go()};
-
-  // datepicker: auto-fill max date range from data
-  const dates=JOBS.map(j=>j.date||'').filter(d=>d.length===8).sort();
-  if(dates.length){
-    const toISO=d=>d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);
-    const dfEl=document.getElementById('df');
-    const dtEl=document.getElementById('dt');
-    dfEl.min=dtEl.min=toISO(dates[0]);
-    dfEl.max=dtEl.max=toISO(dates[dates.length-1]);
-    dfEl.onchange=()=>{sDF=dfEl.value.replace(/-/g,''); go();};
-    dtEl.onchange=()=>{sDT=dtEl.value.replace(/-/g,''); go();};
-  }
+  document.getElementById('tc-today').textContent=JOBS.length;
+  document.getElementById('tc-hist').textContent=HISTORY.length+'天';
+  buildFilters(JOBS);
+  buildDateChips();
   go();
 }
 
-function uniq(a){return[...new Set(a)]}
+function buildDateChips(){
+  const dc=document.getElementById('hdc');
+  if(!HISTORY.length){
+    const s=document.createElement('span');
+    s.style.cssText='font-size:.75rem;color:#bbb';
+    s.textContent='尚無歷史紀錄';
+    dc.appendChild(s);
+    return;
+  }
+  HISTORY.forEach(h=>{
+    const p=h.date.split('-');
+    const c=chip(p[1]+'/'+p[2]+'  '+h.count+'筆', false);
+    c.dataset.hdate=h.date;
+    c.onclick=()=>selectHistDate(h.date);
+    dc.appendChild(c);
+  });
+}
 
-function mk(id,vals,set){
+// ── Tab switching ─────────────────────────────────────────────────
+
+function switchTab(tab){
+  if(curTab===tab) return;
+  curTab=tab;
+  document.getElementById('tb-today').classList.toggle('on', tab==='today');
+  document.getElementById('tb-hist').classList.toggle('on',  tab==='hist');
+  document.getElementById('hist-row').style.display=tab==='hist'?'flex':'none';
+
+  sA.clear(); sK.clear(); sS=''; sQ=''; sDF=''; sDT='';
+  document.getElementById('ss').value='';
+  document.getElementById('sb').value='';
+  document.getElementById('df').value='';
+  document.getElementById('dt').value='';
+
+  if(tab==='today'){
+    activeJobs=JOBS;
+    document.getElementById('hd-date').textContent=TODAY_STR;
+    document.getElementById('total-cnt').textContent=JOBS.length;
+    buildFilters(JOBS);
+    go();
+  } else {
+    if(HISTORY.length>0){
+      selectHistDate(curHistDate||HISTORY[0].date);
+    } else {
+      activeJobs=[];
+      buildFilters([]);
+      document.getElementById('hd-date').textContent='歷史紀錄';
+      document.getElementById('total-cnt').textContent=0;
+      go();
+    }
+  }
+}
+
+function selectHistDate(date){
+  curHistDate=date;
+  const entry=HISTORY.find(h=>h.date===date);
+  if(!entry) return;
+
+  [...document.getElementById('hdc').children].forEach(c=>{
+    if(c.dataset&&c.dataset.hdate) c.classList.toggle('on', c.dataset.hdate===date);
+  });
+
+  sA.clear(); sK.clear(); sS=''; sQ=''; sDF=''; sDT='';
+  document.getElementById('ss').value='';
+  document.getElementById('sb').value='';
+  document.getElementById('df').value='';
+  document.getElementById('dt').value='';
+
+  activeJobs=entry.jobs;
+  const p=date.split('-');
+  document.getElementById('hd-date').textContent=p[0]+'/'+p[1]+'/'+p[2];
+  document.getElementById('total-cnt').textContent=entry.count;
+  buildFilters(activeJobs);
+  go();
+}
+
+// ── Filters ───────────────────────────────────────────────────────
+
+function buildFilters(jobs){
+  const areas=uniq(jobs.map(j=>j.city));
+  const kws  =uniq(jobs.map(j=>j.keyword)).sort();
+  const bkts =uniq(jobs.map(j=>j.salary_bucket))
+               .sort((a,b)=>SORD.indexOf(a)-SORD.indexOf(b));
+
+  rebuildChips('ac', areas, sA);
+  rebuildChips('kc', kws,   sK);
+
+  const sel=document.getElementById('ss');
+  sel.innerHTML='<option value="">全部</option>';
+  bkts.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o)});
+  sel.onchange=()=>{sS=sel.value;go()};
+
+  document.getElementById('sb').oninput=e=>{sQ=e.target.value.toLowerCase();go()};
+
+  // datepicker: auto-fill date range from this job set
+  const dfEl=document.getElementById('df');
+  const dtEl=document.getElementById('dt');
+  const dates=jobs.map(j=>j.date||'').filter(d=>d.length===8).sort();
+  if(dates.length){
+    const toISO=d=>d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);
+    dfEl.min=dtEl.min=toISO(dates[0]);
+    dfEl.max=dtEl.max=toISO(dates[dates.length-1]);
+  } else {
+    dfEl.min=dfEl.max=dtEl.min=dtEl.max='';
+  }
+  dfEl.onchange=()=>{sDF=dfEl.value.replace(/-/g,''); go();};
+  dtEl.onchange=()=>{sDT=dtEl.value.replace(/-/g,''); go();};
+}
+
+function rebuildChips(id, vals, set){
   const w=document.getElementById(id);
-  const all=chip('全部',true);
+  w.innerHTML='';
+  const all=chip('全部', true);
   all.onclick=()=>{set.clear();go()};
   w.appendChild(all);
   vals.forEach(v=>{
-    const c=chip(v,false);
+    const c=chip(v, false);
     c.onclick=()=>{set.has(v)?set.delete(v):set.add(v);go()};
     w.appendChild(c);
   });
 }
 
-function chip(txt,on){
+function uniq(a){return[...new Set(a)]}
+
+function chip(txt, on){
   const c=document.createElement('span');
   c.className='chip'+(on?' on':'');
   c.textContent=txt;
   return c;
 }
 
-function sync(id,set){
+function sync(id, set){
   [...document.getElementById(id).children].forEach(c=>{
     c.classList.toggle('on', c.textContent==='全部'?set.size===0:set.has(c.textContent));
   });
@@ -296,7 +446,7 @@ function sync(id,set){
 
 function go(){
   sync('ac',sA); sync('kc',sK);
-  const out=JOBS.filter(j=>{
+  const out=activeJobs.filter(j=>{
     if(sA.size&&!sA.has(j.city))         return false;
     if(sK.size&&!sK.has(j.keyword))      return false;
     if(sS&&j.salary_bucket!==sS)         return false;
@@ -354,7 +504,7 @@ function x(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Drawer ───────────────────────────────────────────────────────
+// ── Drawer ────────────────────────────────────────────────────────
 
 function openDrawer(){
   const saved=localStorage.getItem('gh_pat')||'';
@@ -375,7 +525,7 @@ function getPAT(){
   return p;
 }
 
-// ── Toast ────────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────
 
 function toast(msg,ok=true){
   const el=document.getElementById('toast');
@@ -385,7 +535,7 @@ function toast(msg,ok=true){
   el._t=setTimeout(()=>el.className='toast',3500);
 }
 
-// ── GitHub API ───────────────────────────────────────────────────
+// ── GitHub API ────────────────────────────────────────────────────
 
 async function triggerWorkflow(){
   const pat=getPAT();
