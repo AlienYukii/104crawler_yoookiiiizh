@@ -1,4 +1,5 @@
 import csv
+import html
 import os
 import smtplib
 import textwrap
@@ -157,21 +158,32 @@ def send_email(jobs: list[dict], config: dict, today: str, report_url: str = '',
 
 
 # ── Telegram ───────────────────────────────────────────────────────────────
+# 用 HTML parse_mode（而非 Markdown）：104 職缺標題/公司名常含 ()[]*_ 等符號，
+# Telegram 舊版 Markdown 解析器對這些符號的配對要求很嚴格，隨便一個沒配對就整則訊息被拒絕；
+# HTML 只需跳脫 & < >，比較不容易因使用者資料裡的符號而炸掉。
 
 def _format_job_tg(job: dict) -> str:
+    title    = html.escape(job['title'])
+    company  = html.escape(job['company'])
+    location = html.escape(job['location'])
+    salary   = html.escape(job['salary'])
+    keyword  = html.escape(job['keyword'])
+    url      = html.escape(job['url'], quote=True)
     return (
-        f'💼 [{job["title"]}]({job["url"]})\n'
-        f'🏢 {job["company"]}　📍 {job["location"]}\n'
-        f'💰 {job["salary"]}　🔍 #{job["keyword"]}\n'
+        f'💼 <a href="{url}">{title}</a>\n'
+        f'🏢 {company}　📍 {location}\n'
+        f'💰 {salary}　🔍 #{keyword}\n'
     )
 
 
-def _tg_send(bot_token: str, chat_id: str, text: str) -> None:
+def _tg_send(bot_token: str, chat_id: str, text: str) -> bool:
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
-    payload = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown', 'disable_web_page_preview': True}
+    payload = {'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML', 'disable_web_page_preview': True}
     resp = requests.post(url, json=payload, timeout=10)
     if not resp.ok:
         print(f'[Telegram] 發送失敗: {resp.text}')
+        return False
+    return True
 
 
 def send_telegram(jobs: list[dict], config: dict, today: str) -> None:
@@ -186,7 +198,7 @@ def send_telegram(jobs: list[dict], config: dict, today: str) -> None:
         print('[Telegram] 缺少 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID，略過。')
         return
 
-    header = f'📋 *104 每日職缺 — {today}*\n共 {len(jobs)} 筆新職缺\n\n'
+    header = f'📋 <b>104 每日職缺 — {html.escape(today)}</b>\n共 {len(jobs)} 筆新職缺\n\n'
     if not jobs:
         _tg_send(bot_token, chat_id, header + '今日無符合條件的新職缺。')
         return
@@ -203,9 +215,8 @@ def send_telegram(jobs: list[dict], config: dict, today: str) -> None:
             current += block
     chunks.append(current)
 
-    for chunk in chunks:
-        _tg_send(bot_token, chat_id, chunk)
-    print(f'[Telegram] 已發送 {len(chunks)} 則訊息')
+    sent = sum(_tg_send(bot_token, chat_id, chunk) for chunk in chunks)
+    print(f'[Telegram] 已發送 {sent}/{len(chunks)} 則訊息')
 
 
 # ── 統一入口 ────────────────────────────────────────────────────────────────
