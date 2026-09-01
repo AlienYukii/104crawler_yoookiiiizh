@@ -33,11 +33,16 @@ search:
 notification:
   email:
     enabled: true
+    # daily = 每次爬蟲跑完都寄；weekly = 每週固定一天寄「過去 7 天彙整」
+    frequency: weekly
+    # ISO 星期幾（1=一 2=二 3=三 4=四 5=五 6=六 7=日），frequency: weekly 時才生效
+    weekday: 5
     # 收件人清單（可多個）
     recipients:
       - owen901031@gmail.com
 
   telegram:
     enabled: true
+    # 目前固定每天發送（跟爬蟲同步），僅含當天新職缺
     # Bot Token 與 Chat ID 請設定在 .env 或 GitHub Secrets
     # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID

@@ -1,3 +1,4 @@
+import csv
 import os
 import smtplib
 import textwrap
@@ -5,9 +6,58 @@ import requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
 TAIPEI_TZ = timezone(timedelta(hours=8))
 MAX_TG_CHARS = 4000   # Telegram 單則上限 4096，留緩衝
+
+_AREA_PRIORITY = ['桃園市', '新竹市', '新竹縣', '台北市', '新北市']
+
+
+def _location_rank(location: str) -> int:
+    for i, city in enumerate(_AREA_PRIORITY):
+        if city in location:
+            return i
+    return len(_AREA_PRIORITY)
+
+
+def _should_send_today(notify_cfg: dict) -> bool:
+    if notify_cfg.get('frequency', 'daily') != 'weekly':
+        return True
+    target_weekday = notify_cfg.get('weekday', 1)
+    return datetime.now(TAIPEI_TZ).isoweekday() == target_weekday
+
+
+def _load_week_jobs(results_dir: Path, days: int = 7) -> list[dict]:
+    by_date: dict[str, tuple[int, Path]] = {}
+    for f in results_dir.glob('*.csv'):
+        parts = f.stem.rsplit('-', 1)
+        if len(parts) != 2:
+            continue
+        date_key = parts[0]
+        try:
+            seq = int(parts[1])
+        except ValueError:
+            continue
+        if date_key not in by_date or seq > by_date[date_key][0]:
+            by_date[date_key] = (seq, f)
+
+    recent_dates = sorted(by_date.keys(), reverse=True)[:days]
+
+    seen_urls: set = set()
+    jobs: list[dict] = []
+    for date_key in sorted(recent_dates):
+        _, f = by_date[date_key]
+        with open(f, encoding='utf-8-sig') as fh:
+            for row in csv.DictReader(fh):
+                url = row.get('url', '')
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                jobs.append(row)
+
+    jobs.sort(key=lambda j: _location_rank(j.get('location', '')))
+    return jobs
 
 
 # ── Email ──────────────────────────────────────────────────────────────────
@@ -64,10 +114,19 @@ def _build_html(jobs: list[dict], today: str, report_url: str = '') -> str:
 </body></html>'''
 
 
-def send_email(jobs: list[dict], config: dict, today: str, report_url: str = '') -> None:
+def send_email(jobs: list[dict], config: dict, today: str, report_url: str = '',
+               results_dir: Path | None = None) -> None:
     email_cfg = config['notification']['email']
     if not email_cfg.get('enabled', False):
         return
+
+    if not _should_send_today(email_cfg):
+        print('[Email] 今天不是週報寄送日，略過。')
+        return
+
+    if email_cfg.get('frequency') == 'weekly' and results_dir is not None:
+        jobs = _load_week_jobs(results_dir)
+        today = f'{today}（過去 7 天彙整）'
 
     sender = os.environ.get('EMAIL_SENDER', '')
     password = os.environ.get('EMAIL_PASSWORD', '')
@@ -151,7 +210,8 @@ def send_telegram(jobs: list[dict], config: dict, today: str) -> None:
 
 # ── 統一入口 ────────────────────────────────────────────────────────────────
 
-def notify(jobs: list[dict], config: dict, report_url: str = '') -> None:
+def notify(jobs: list[dict], config: dict, report_url: str = '',
+           results_dir: Path | None = None) -> None:
     today = datetime.now(TAIPEI_TZ).strftime('%Y/%m/%d')
-    send_email(jobs, config, today, report_url)
+    send_email(jobs, config, today, report_url, results_dir)
     send_telegram(jobs, config, today)

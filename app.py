@@ -90,7 +90,7 @@ def main() -> None:
     else:
         print('\n[*] 今日無新職缺，仍發送通知（空白報告）。')
 
-    notify(jobs, config, report_url=REPORT_URL)
+    notify(jobs, config, report_url=REPORT_URL, results_dir=results_dir)
     print('===== 完成 =====')
 
 
