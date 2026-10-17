@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>104 職缺 — 2026/10/16</title>
+<title>104 職缺 — 2026/10/17</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#2c3e50}
@@ -112,13 +112,13 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 
 <div class="hd">
   <span class="hd-t">📋 104 每日職缺</span>
-  <div class="hd-m"><span id="vis">13</span> / <span id="total-cnt">13</span> 筆 &nbsp;·&nbsp; <span id="hd-date">2026/10/16</span></div>
+  <div class="hd-m"><span id="vis">0</span> / <span id="total-cnt">0</span> 筆 &nbsp;·&nbsp; <span id="hd-date">2026/10/17</span></div>
   <button class="hd-btn pr" onclick="triggerWorkflow()">▶ 觸發</button>
   <button class="hd-btn" onclick="openDrawer()">⚙ 設定</button>
 </div>
 
 <div class="tabbar">
-  <button class="tabbtn on" id="tb-today" onclick="switchTab('today')">📅 今日職缺 <span class="tbcnt" id="tc-today">13</span></button>
+  <button class="tabbtn on" id="tb-today" onclick="switchTab('today')">📅 今日職缺 <span class="tbcnt" id="tc-today">0</span></button>
   <button class="tabbtn" id="tb-hist" onclick="switchTab('hist')">📚 歷史紀錄 <span class="tbcnt" id="tc-hist">…</span></button>
 </div>
 
@@ -175,12 +175,12 @@ textarea.di{min-height:220px;font-family:'Courier New',monospace;font-size:.75re
 <div class="toast" id="toast"></div>
 
 <script>
-const JOBS    = [{"id": "15248841", "title": "金融服務事業群_自動化測試工程師", "company": "三竹資訊股份有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/92u2x", "keyword": "SDET", "city": "台北市", "salary_bucket": "面議"}, {"id": "11698028", "title": "專案助理｜科技藝術", "company": "黑川互動媒體藝術有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/6yq98", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "15433184", "title": "遊戲軟體測試、或 遊戲自動化測試工程師", "company": "復觀創新有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/96sbk", "keyword": "軟體測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "12450230", "title": "測試工程師", "company": "昇揚國際資訊股份有限公司", "location": "台北市內湖區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/7eunq", "keyword": "測試工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "15399614", "title": "金融服務事業群 -  自動化測試工程師", "company": "三竹資訊股份有限公司", "location": "台北市中山區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/962f2", "keyword": "自動化測試", "city": "台北市", "salary_bucket": "面議"}, {"id": "15413225", "title": "軟體品質分析師 Software QA Analyst", "company": "諾盾科技有限公司", "location": "台北市大同區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/96cx5", "keyword": "軟體品質保證工程師", "city": "台北市", "salary_bucket": "面議"}, {"id": "15265080", "title": "軟韌體測試工程師", "company": "有騰科技有限公司", "location": "新北市土城區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/936m0", "keyword": "QA", "city": "新北市", "salary_bucket": "面議"}, {"id": "14601793", "title": "軟體測試工程師", "company": "口袋證券股份有限公司", "location": "新北市板橋區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/8oytd", "keyword": "軟體測試", "city": "新北市", "salary_bucket": "面議"}, {"id": "15184413", "title": "軟體測試工程師（ QA Engineer）", "company": "互動資通股份有限公司", "location": "新北市新莊區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/91gd9", "keyword": "軟體測試", "city": "新北市", "salary_bucket": "面議"}, {"id": "14395062", "title": "產品測試工程師", "company": "有騰科技有限公司", "location": "新北市土城區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/8kjau", "keyword": "測試工程師", "city": "新北市", "salary_bucket": "面議"}, {"id": "14041398", "title": "毫米波測試工程師／mmWave Test Engineer (板橋)", "company": "稜研科技股份有限公司", "location": "新北市板橋區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/8cyeu", "keyword": "測試工程師", "city": "新北市", "salary_bucket": "面議"}, {"id": "13009468", "title": "{總公司職缺} 食安品管副主任/主任", "company": "T4清茶達人_晴天美食股份有限公司", "location": "台中市豐原區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/7qu64", "keyword": "QA", "city": "其他", "salary_bucket": "面議"}, {"id": "15146429", "title": "助理測試工程師", "company": "菱生精密工業股份有限公司", "location": "台中市潭子區", "salary": "面議", "experience": "", "education": "", "date": "20261016", "url": "https://www.104.com.tw/job/90n25", "keyword": "測試工程師", "city": "其他", "salary_bucket": "面議"}];
+const JOBS    = [];
 const COLORS  = {"桃園市": "#e67e22", "新竹市": "#27ae60", "新竹縣": "#2ecc71", "台北市": "#2980b9", "新北市": "#8e44ad", "其他": "#7f8c8d"};
 const SORD    = ["面議", "時薪", "3萬以下", "3~4萬", "4~5萬", "5~6萬", "6~8萬", "8萬以上"];
 const CFG_YAML= "# ============================================================\n#  104 職缺爬蟲設定檔\n#  修改後重新執行 / 推上 GitHub 即生效\n# ============================================================\n\nsearch:\n  keywords:\n    - SDET\n    - QA\n    - 軟體測試\n    - 軟體測試工程師\n    - 測試工程師\n    - 自動化測試\n    - 自動化測試工程師\n    - 軟體品質保證\n    - 軟體品質保證工程師\n    - 品檢軟體工程師\n    \n\n  areas:\n    - 台北市\n    - 新北市\n    - 桃園市\n    - 新竹市\n    - 新竹縣\n\n  # 每個關鍵字最多抓幾頁（每頁約 40 筆）\n  max_pages: 3\n\n  # true = 只顯示今日更新職缺；false = 顯示全部搜尋結果\n  today_only: true\n\nnotification:\n  email:\n    enabled: true\n    # daily = 每次爬蟲跑完都寄；weekly = 每週固定一天寄「過去 7 天彙整」\n    frequency: weekly\n    # ISO 星期幾（1=一 2=二 3=三 4=四 5=五 6=六 7=日），frequency: weekly 時才生效\n    weekday: 5\n    # 收件人清單（可多個）\n    recipients:\n      - owen901031@gmail.com\n\n  telegram:\n    enabled: true\n    # 目前固定每天發送（跟爬蟲同步），僅含當天新職缺\n    # Bot Token 與 Chat ID 請設定在 .env 或 GitHub Secrets\n    # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID\n";
 const HISTORY = [];
-const TODAY_STR = '2026/10/16';
+const TODAY_STR = '2026/10/17';
 
 const REPO = 'AlienYukii/104crawler_yoookiiiizh';
 const WFID = 'daily_crawl.yml';
